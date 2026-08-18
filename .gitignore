@@ -1,0 +1,6 @@
+# Ignorar archivos temporales y cachés
+__pycache__/
+*.pyc
+*.log
+.DS_Store
+thumbs.db

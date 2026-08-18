@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Asistente Inteligente de Outlook | Executive AI Agent</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <!-- Header principal -->
+  <header class="app-header">
+    <div class="brand-container">
+      <div class="brand-icon">
+        <i class="fa-solid fa-robot"></i>
+      </div>
+      <div class="brand-text">
+        <h1>Asistente Outlook IA <span>v1.0 Local</span></h1>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <span class="tag" style="background: rgba(46, 213, 115, 0.15); color: var(--priority-low); border-color: rgba(46, 213, 115, 0.3); font-weight: 600;">
+        <i class="fa-solid fa-bolt"></i> Auto-Sync Activo (20s)
+      </span>
+      <button class="btn" id="btn-sync-today" onclick="loadTodaySummary()">
+        <i class="fa-solid fa-rotate"></i> Actualizar Día
+      </button>
+      <button class="btn btn-primary" onclick="openBraveSyncGuide()">
+        <i class="fa-solid fa-sync"></i> Conectar Outlook Real
+      </button>
+      <button class="btn" onclick="exportBackup()">
+        <i class="fa-solid fa-database"></i> Exportar Memoria
+      </button>
+    </div>
+  </header>
+
+  <!-- Contenedor principal -->
+  <main class="app-container">
+
+    <!-- Pestanias de navegación -->
+    <nav class="nav-tabs">
+      <button class="tab-btn active" onclick="switchTab('tab-digest')">
+        <i class="fa-solid fa-chart-line"></i> Resumen Diario & Prioridades
+      </button>
+      <button class="tab-btn" onclick="switchTab('tab-inbox')">
+        <i class="fa-solid fa-inbox"></i> Bandeja Inteligente (<span id="count-inbox">0</span>)
+      </button>
+      <button class="tab-btn" onclick="switchTab('tab-memory')">
+        <i class="fa-solid fa-brain"></i> Memoria de Contactos
+      </button>
+      <button class="tab-btn" onclick="switchTab('tab-faqs')">
+        <i class="fa-solid fa-circle-question"></i> Base de FAQs
+      </button>
+      <button class="tab-btn" onclick="switchTab('tab-config')">
+        <i class="fa-solid fa-sliders"></i> Conexión & Portabilidad
+      </button>
+    </nav>
+
+    <!-- PESTAÑA 1: RESUMEN DIARIO & TARJETAS METRICAS -->
+    <section id="tab-digest" class="tab-content active">
+
+      <!-- Tarjetas de Estadísticas Interactivas (Filtros de 1 Clic) -->
+      <div class="stats-grid">
+        <div class="stat-card" onclick="jumpToFilter('HIGH')" style="cursor: pointer;" title="Haz clic para ver correos de ALTA PRIORIDAD">
+          <div class="stat-info">
+            <div class="stat-label">🔴 Alta Prioridad</div>
+            <div class="stat-value" id="stat-high" style="color: var(--priority-high);">0</div>
+          </div>
+          <div class="stat-icon high">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+        </div>
+
+        <div class="stat-card" onclick="jumpToFilter('MEDIUM')" style="cursor: pointer;" title="Haz clic para ver correos de PRIORIDAD MEDIA">
+          <div class="stat-info">
+            <div class="stat-label">🟡 Prioridad Media</div>
+            <div class="stat-value" id="stat-med" style="color: var(--priority-medium);">0</div>
+          </div>
+          <div class="stat-icon med">
+            <i class="fa-solid fa-clock"></i>
+          </div>
+        </div>
+
+        <div class="stat-card" onclick="jumpToFilter('LOW')" style="cursor: pointer;" title="Haz clic para ver correos INFORMATIVOS / BAJA">
+          <div class="stat-info">
+            <div class="stat-label">🟢 Baja / Informativos</div>
+            <div class="stat-value" id="stat-low" style="color: var(--priority-low);">0</div>
+          </div>
+          <div class="stat-icon low">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+        </div>
+
+        <div class="stat-card" onclick="jumpToFilter('ALL')" style="cursor: pointer;" title="Haz clic para ver la BANDEJA COMPLETA">
+          <div class="stat-info">
+            <div class="stat-label">Total Procesados</div>
+            <div class="stat-value" id="stat-total" style="color: var(--primary-cyan);">0</div>
+          </div>
+          <div class="stat-icon total">
+            <i class="fa-solid fa-envelope"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resumen Ejecutivo de IA -->
+      <div class="digest-box">
+        <div class="digest-title">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> Resumen Ejecutivo Diario (IA Digest)
+        </div>
+        <div class="digest-text" id="digest-summary-text">
+          Cargando análisis inteligente de correos del día...
+        </div>
+        
+        <h4 style="font-family: var(--font-heading); font-size: 0.95rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+          <i class="fa-solid fa-list-check"></i> Acciones Requeridas Hoy:
+        </h4>
+        <div class="action-items-list" id="action-items-container">
+          <!-- Se llena dinámicamente -->
+        </div>
+      </div>
+
+      <!-- Vista rápida de correos urgentes -->
+      <h3 style="font-family: var(--font-heading); margin-bottom: 1rem;">
+        <i class="fa-solid fa-fire" style="color: var(--priority-high);"></i> Atenciones Urgentes de Hoy
+      </h3>
+      <div class="email-list" id="urgent-email-list">
+        <!-- Se llena dinámicamente -->
+      </div>
+    </section>
+
+    <!-- PESTAÑA 2: BANDEJA CLASIFICADA -->
+    <section id="tab-inbox" class="tab-content">
+      <div class="inbox-toolbar">
+        <div class="filter-buttons">
+          <button class="filter-btn active" onclick="filterEmails('ALL', this)">Todos</button>
+          <button class="filter-btn" onclick="filterEmails('HIGH', this)">🔴 Alta Prioridad</button>
+          <button class="filter-btn" onclick="filterEmails('MEDIUM', this)">🟡 Media</button>
+          <button class="filter-btn" onclick="filterEmails('LOW', this)">🟢 Baja</button>
+          <button class="filter-btn" onclick="filterEmails('PENDING', this)">⏳ Pendientes</button>
+        </div>
+
+        <input type="text" class="search-input" id="search-inbox" placeholder="🔍 Buscar por asunto o remitente..." oninput="searchEmails(this.value)">
+      </div>
+
+      <div class="email-list" id="full-email-list">
+        <!-- Lista completa de correos -->
+      </div>
+    </section>
+
+    <!-- PESTAÑA 3: MEMORIA Y CONTACTOS -->
+    <section id="tab-memory" class="tab-content">
+      <div style="margin-bottom: 1.5rem;">
+        <h2 style="font-family: var(--font-heading); margin-bottom: 0.3rem;">🧠 Memoria Persistente de Contactos</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">
+          La IA registra patrones, preferencias e historial relevante de cada contacto o empresa de forma local.
+        </p>
+      </div>
+
+      <div class="memory-grid" id="memory-grid-container">
+        <!-- Tarjetas de memoria de contactos -->
+      </div>
+    </section>
+
+    <!-- PESTAÑA 4: BASE DE FAQS Y RESPUESTAS -->
+    <section id="tab-faqs" class="tab-content">
+      <div class="inbox-toolbar">
+        <div>
+          <h2 style="font-family: var(--font-heading); margin-bottom: 0.3rem;">❓ Base de Preguntas Frecuentes (FAQs)</h2>
+          <p style="color: var(--text-muted); font-size: 0.9rem;">
+            Reglas de respuesta automática o borradores sugieridos para preguntas repetitivas.
+          </p>
+        </div>
+        <button class="btn btn-primary" onclick="openAddFaqModal()">
+          <i class="fa-solid fa-plus"></i> Nueva Regla FAQ
+        </button>
+      </div>
+
+      <div class="faq-list" id="faq-list-container">
+        <!-- Lista de FAQs -->
+      </div>
+    </section>
+
+    <!-- PESTAÑA 5: CONFIGURACIÓN Y PORTABILIDAD -->
+    <section id="tab-config" class="tab-content">
+      <div style="max-width: 800px;">
+        <h2 style="font-family: var(--font-heading); margin-bottom: 0.5rem;">⚙️ Configuración & Portabilidad entre Laptops</h2>
+        
+        <div class="digest-box" style="margin-top: 1.5rem;">
+          <h3 style="color: var(--primary-cyan); font-family: var(--font-heading); margin-bottom: 0.75rem;">
+            <i class="fa-solid fa-laptop-code"></i> ¿Cómo trasladar este proyecto a otra Laptop?
+          </h3>
+          <ol style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.8; margin-left: 1.25rem;">
+            <li><strong>Copiar Carpeta:</strong> Copia toda la carpeta <code>outlook-email-ai-assistant</code> a tu nueva laptop o ponla en <strong>OneDrive / Google Drive</strong>.</li>
+            <li><strong>Memoria Integrada:</strong> El archivo <code>knowledge_memory.db</code> contiene <strong>TODA</strong> la memoria, resúmenes y preguntas frecuentes aprendidas.</li>
+            <li><strong>Ejecutar:</strong> En la nueva laptop solo haz doble clic en <code>iniciar_asistente.bat</code>.</li>
+          </ol>
+        </div>
+
+        <div class="stat-card" style="margin-top: 1.5rem; flex-direction: column; align-items: flex-start; gap: 1rem;">
+          <h3 style="font-family: var(--font-heading); font-size: 1.1rem;">
+            <i class="fa-solid fa-file-import" style="color: var(--primary-purple);"></i> Respaldar o Importar Memoria Manualmente
+          </h3>
+          <p style="color: var(--text-muted); font-size: 0.85rem;">
+            Puedes descargar un archivo JSON de respaldo de tu memoria para importarlo en otra máquina.
+          </p>
+          <div style="display: flex; gap: 1rem;">
+            <button class="btn btn-primary" onclick="exportBackup()">
+              <i class="fa-solid fa-download"></i> Descargar Copia (.json)
+            </button>
+            <label class="btn" style="cursor: pointer;">
+              <i class="fa-solid fa-upload"></i> Cargar Copia
+              <input type="file" id="import-file-input" accept=".json" style="display: none;" onchange="importBackup(event)">
+            </label>
+          </div>
+        </div>
+
+        <!-- Sincronización Automática en Segundo Plano -->
+        <div class="stat-card" style="margin-top: 1.5rem; flex-direction: column; align-items: flex-start; gap: 1rem;">
+          <h3 style="font-family: var(--font-heading); font-size: 1.15rem; color: var(--primary-cyan);">
+            <i class="fa-solid fa-rotate" style="color: var(--primary-cyan);"></i> Sincronización Automática en Segundo Plano (Sin Navegador)
+          </h3>
+          <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5;">
+            El servidor Python consultará automáticamente tu bandeja de entrada de la UCSM en segundo plano cada 60 segundos. No requieres abrir consolas ni presionar botones en el navegador.
+          </p>
+
+          <div style="width: 100%; display: grid; gap: 0.85rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <input type="checkbox" id="bg-sync-enable" style="width: 18px; height: 18px;" checked>
+              <label for="bg-sync-enable" style="font-size: 0.9rem; color: var(--text-main); font-weight: 600;">Activar Sincronizador Automático Daemon</label>
+            </div>
+            
+            <input type="text" class="form-control" placeholder="Servidor IMAP (ej: outlook.office365.com)" id="bg-imap-server" value="outlook.office365.com">
+            <input type="email" class="form-control" placeholder="Correo Institucional (ej: luis.merma@est.ucsm.edu.pe)" id="bg-imap-email" value="luis.merma@est.ucsm.edu.pe">
+            <input type="password" class="form-control" placeholder="Contraseña de Aplicación / Acceso Directo de Microsoft" id="bg-imap-password">
+
+            <button class="btn btn-primary" onclick="saveBackgroundImapConfig()">
+              <i class="fa-solid fa-floppy-disk"></i> Guardar y Activar Segundo Plano
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: VER / RESPONDER BORRADOR -->
+  <div class="modal-overlay" id="modal-draft">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 id="draft-modal-title">Borrador de Respuesta Generado</h3>
+        <button class="close-modal" onclick="closeModal('modal-draft')">&times;</button>
+      </div>
+      <div class="form-group">
+        <label>Para / Remitente:</label>
+        <input type="text" class="form-control" id="draft-recipient" readonly>
+      </div>
+      <div class="form-group">
+        <label>Asunto:</label>
+        <input type="text" class="form-control" id="draft-subject">
+      </div>
+      <div class="form-group">
+        <label>Respuesta Sugerida por la IA (Borrador):</label>
+        <textarea class="form-control" id="draft-body" style="height: 180px;"></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button class="btn" onclick="closeModal('modal-draft')">Cancelar</button>
+        <button class="btn btn-primary" onclick="confirmSendResponse()">
+          <i class="fa-solid fa-paper-plane"></i> Aprobar y Enviar en Outlook Cloud
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SIMULAR NUEVO CORREO -->
+  <div class="modal-overlay" id="modal-simulate">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-envelope-open-text" style="color: var(--primary-cyan);"></i> Simular Correo Entrante en Tiempo Real</h3>
+        <button class="close-modal" onclick="closeModal('modal-simulate')">&times;</button>
+      </div>
+      <div class="form-group">
+        <label>Nombre del Remitente:</label>
+        <input type="text" class="form-control" id="sim-name" placeholder="Ej: Juan Pérez (Logística)">
+      </div>
+      <div class="form-group">
+        <label>Correo del Remitente:</label>
+        <input type="email" class="form-control" id="sim-email" placeholder="Ej: juan.perez@empresa.com">
+      </div>
+      <div class="form-group">
+        <label>Asunto del Correo:</label>
+        <input type="text" class="form-control" id="sim-subject" placeholder="Ej: URGENTE: Solicito precio de servicio">
+      </div>
+      <div class="form-group">
+        <label>Cuerpo del Mensaje:</label>
+        <textarea class="form-control" id="sim-body" placeholder="Ej: Buenos días, requerimos conocer la tarifa para 10 usuarios de forma urgente antes de fin de mes."></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button class="btn" onclick="closeModal('modal-simulate')">Cancelar</button>
+        <button class="btn btn-primary" onclick="submitSimulatedEmail()">
+          <i class="fa-solid fa-brain"></i> Ingestar y Clasificar con IA
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NUEVA REGLA FAQ -->
+  <div class="modal-overlay" id="modal-add-faq">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-plus-circle" style="color: var(--primary-purple);"></i> Crear Nueva Regla de Pregunta Frecuente</h3>
+        <button class="close-modal" onclick="closeModal('modal-add-faq')">&times;</button>
+      </div>
+      <div class="form-group">
+        <label>Palabras Clave (separadas por coma):</label>
+        <input type="text" class="form-control" id="faq-keywords" placeholder="Ej: precio, cotización, tarifa, costo">
+      </div>
+      <div class="form-group">
+        <label>Pregunta Frecuente / Tema:</label>
+        <input type="text" class="form-control" id="faq-question" placeholder="Ej: ¿Cuáles son los precios del servicio?">
+      </div>
+      <div class="form-group">
+        <label>Plantilla de Respuesta (usa {nombre} como variable):</label>
+        <textarea class="form-control" id="faq-template" placeholder="Hola {nombre}, con gusto te enviamos la propuesta..."></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button class="btn" onclick="closeModal('modal-add-faq')">Cancelar</button>
+        <button class="btn btn-primary" onclick="submitNewFaq()">
+          <i class="fa-solid fa-save"></i> Guardar Regla FAQ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: GUIA SINCRONIZACION SIN CSP -->
+  <div class="modal-overlay" id="modal-brave-sync">
+    <div class="modal-container" style="max-width: 720px;">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-bolt" style="color: var(--primary-cyan);"></i> Sincronizar Correos Reales (Sin Restricciones CSP)</h3>
+        <button class="close-modal" onclick="closeModal('modal-brave-sync')">&times;</button>
+      </div>
+      <div style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.6;">
+        <p style="margin-bottom: 0.8rem;">
+          Microsoft bloquea peticiones de red externas por seguridad (CSP). ¡Para evitarlo, usamos la función nativa de copia directa de DevTools!
+        </p>
+
+        <ol style="margin-left: 1.25rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.6rem;">
+          <li>Ve a tu pestaña abierta de Outlook Cloud (<code>https://outlook.cloud.microsoft/mail/</code>).</li>
+          <li>Abre la consola de <strong>Brave</strong> (<strong>F12</strong> &gt; <strong>Console</strong>).</li>
+          <li>Copia y pega este código en la consola y presiona <strong>ENTER</strong> (esto copiará tus correos al portapapeles en 1 segundo sin hacer peticiones de red):</li>
+        </ol>
+
+        <div style="background: rgba(0,0,0,0.5); border: 1px solid var(--border-highlight); padding: 0.85rem; border-radius: var(--radius-sm); position: relative; margin-bottom: 1.25rem;">
+          <textarea id="brave-script-box" readonly style="width: 100%; height: 95px; background: transparent; color: #a855f7; border: none; font-family: monospace; font-size: 0.8rem; outline: none; resize: none;">
+copy(Array.from(document.querySelectorAll('[role="option"], [role="listitem"], [data-convid]')).slice(0,25).map(r=>{const t=(r.innerText||'').split('\n').filter(x=>x.trim());return{sender_name:t[0]||'Remitente',sender_email:t[0]?.includes('@')?t[0]:'contacto@ucsm.edu.pe',subject:t[1]||'Sin Asunto',body:t.slice(2,5).join(' '),timestamp:new Date().toLocaleString()}})); alert('¡Correos de Outlook copiados al portapapeles! Vuelve al panel local y haz clic en Pegar.');
+          </textarea>
+          <button class="btn btn-primary" onclick="copyBraveScript()" style="position: absolute; right: 12px; bottom: 12px; padding: 0.3rem 0.65rem; font-size: 0.75rem;">
+            <i class="fa-solid fa-copy"></i> Copiar Código
+          </button>
+        </div>
+
+        <div style="background: rgba(0, 229, 255, 0.08); border: 1px solid var(--border-highlight); padding: 1rem; border-radius: var(--radius-md); text-align: center;">
+          <h4 style="color: var(--primary-cyan); margin-bottom: 0.5rem; font-family: var(--font-heading);">
+            Paso Final: Ingestar Correos Copiados en el Asistente
+          </h4>
+          <p style="font-size: 0.85rem; margin-bottom: 0.75rem;">
+            Una vez ejecutado el código en Outlook, haz clic en el botón de abajo:
+          </p>
+          <button class="btn btn-primary" onclick="pasteAndSyncFromClipboard()" style="font-size: 1rem; padding: 0.65rem 1.5rem;">
+            <i class="fa-solid fa-paste"></i> 📋 Pegar Correos e Ingestar con IA
+          </button>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 1.25rem;">
+        <button class="btn" onclick="closeModal('modal-brave-sync')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

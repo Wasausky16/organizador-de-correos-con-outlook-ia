@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Asistente Outlook - Sincronizador Automático",
+  "version": "1.0",
+  "description": "Sincroniza automáticamente los nuevos correos de tu Outlook Cloud con tu Asistente Inteligente Local",
+  "host_permissions": [
+    "https://outlook.cloud.microsoft/*",
+    "https://outlook.live.com/*",
+    "https://outlook.office.com/*",
+    "http://localhost:8050/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://outlook.cloud.microsoft/mail/*",
+        "https://outlook.live.com/mail/*",
+        "https://outlook.office.com/mail/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
