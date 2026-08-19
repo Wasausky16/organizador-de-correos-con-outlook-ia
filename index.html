@@ -28,7 +28,7 @@
       <button class="btn btn-secondary" onclick="refreshAllData(this)" title="Recargar toda la bandeja, métricas y calendario">
         <i class="fa-solid fa-rotate"></i> Actualizar
       </button>
-      <button class="btn btn-primary" onclick="switchTab('tab-config')" title="Conexión Outlook, Extensión Brave y Respaldo de Datos">
+      <button class="btn btn-primary" onclick="openDrawer('drawer-options')" title="Abrir panel lateral de configuración y opciones">
         <i class="fa-solid fa-gear"></i> Opciones & Conexión
       </button>
     </div>
@@ -462,6 +462,59 @@ copy(Array.from(document.querySelectorAll('[role="option"], [role="listitem"], [
         <button class="btn btn-primary" onclick="submitNewTag()">
           <i class="fa-solid fa-floppy-disk"></i> Guardar Etiqueta
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL DESPLEGABLE LATERAL DESDE LA DERECHA (SLIDE-OVER DRAWER) -->
+  <div class="drawer-overlay" id="drawer-options" onclick="closeDrawer('drawer-options')">
+    <div class="drawer-content" onclick="event.stopPropagation()">
+      <div class="drawer-header">
+        <h3><i class="fa-solid fa-sliders" style="color: var(--primary-cyan);"></i> Opciones & Configuración</h3>
+        <button class="close-modal" onclick="closeDrawer('drawer-options')">&times;</button>
+      </div>
+
+      <div class="stat-card" style="flex-direction: column; align-items: flex-start; gap: 0.75rem; background: rgba(0,229,255,0.05); border-color: rgba(0,229,255,0.2);">
+        <h4 style="font-family: var(--font-heading); color: var(--primary-cyan);">
+          <i class="fa-solid fa-plug"></i> Extensión Nativa Brave
+        </h4>
+        <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+          Extensión V3 cargada en <code>brave://extensions</code>. Sincroniza correos de Outlook Cloud automáticamente cada 15 segundos.
+        </p>
+        <button class="btn btn-primary" onclick="window.open('https://outlook.cloud.microsoft/mail/', '_blank')" style="width: 100%;">
+          <i class="fa-solid fa-up-right-from-square"></i> Abrir Outlook Cloud
+        </button>
+      </div>
+
+      <div class="stat-card" style="flex-direction: column; align-items: flex-start; gap: 0.75rem;">
+        <h4 style="font-family: var(--font-heading); color: var(--primary-purple);">
+          <i class="fa-solid fa-database"></i> Respaldo & Memoria JSON
+        </h4>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">
+          Exporta o importa el archivo de memoria para trasladar tus datos aprendidos a otra laptop.
+        </p>
+        <div style="display: flex; gap: 0.75rem; width: 100%;">
+          <button class="btn btn-primary" onclick="exportBackup()" style="flex: 1;">
+            <i class="fa-solid fa-download"></i> Descargar JSON
+          </button>
+          <label class="btn" style="cursor: pointer; flex: 1; text-align: center;">
+            <i class="fa-solid fa-upload"></i> Cargar Copia
+            <input type="file" id="drawer-import-input" accept=".json" style="display: none;" onchange="importBackup(event)">
+          </label>
+        </div>
+      </div>
+
+      <div class="stat-card" style="flex-direction: column; align-items: flex-start; gap: 0.75rem;">
+        <h4 style="font-family: var(--font-heading);">
+          <i class="fa-solid fa-laptop-code" style="color: var(--priority-medium);"></i> Portabilidad
+        </h4>
+        <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;">
+          Toda tu memoria local se almacena en <code>knowledge_memory.db</code>. Al mover la carpeta a otra laptop, todo se mantiene conservado.
+        </p>
+      </div>
+
+      <div style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-glass); text-align: center; font-size: 0.8rem; color: var(--text-dim);">
+        Asistente Outlook IA v1.0 Local • 100% Privado
       </div>
     </div>
   </div>

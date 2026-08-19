@@ -309,20 +309,42 @@ def init_db():
             ("real-ucsm-04", "Revisión Auto N°0183 Vicerrectorado EPIS", "2026-08-22", "YELLOW", "PENDING")
         ])
 
-        # Sembrar datos de memoria REALES de la cuenta de Luis Merma
-        cursor.executemany('''
-            INSERT OR REPLACE INTO memory_contacts (email, name, company, vip, interaction_count, notes, last_interaction)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', [
-            ("aldair.belisario@est.ucsm.edu.pe", "Aldair Mauricio Belisario", "EPIS - UCSM", 1, 8, 
-             "Estudiante tesista de EPIS. Presentó el avance del Plan de Tesis EPIS_Plan de tesis.md. Requiere revisión académica prioritaria.", "2026-08-17 13:56"),
-            ("mesapartes02@ucsm.edu.pe", "Mesa de Partes 02 UCSM", "UCSM Administrativo", 1, 12, 
-             "Canal oficial de solicitudes especiales y trámites académicos de la universidad.", "2026-08-14 14:00"),
-            ("investigacion@ucsm.edu.pe", "Vicerrectorado de Investigación UCSM", "UCSM Investigación", 0, 5, 
-             "Envía convocatorias y fondos concursables de investigación como 'Jóvenes en Agenda'.", "2026-08-14 09:00"),
-            ("vicerrectorado.academico@ucsm.edu.pe", "Vicerrectorado Académico UCSM", "UCSM Académico", 1, 9, 
-             "Remite resoluciones y autos dirigidos a la Dirección de Escuela de Ingeniería de Sistemas (EPIS).", "2026-08-13 16:20")
-        ])
+    # Limpieza y sanitización automática de datos existentes en BD local (Fix de iniciales CP, A, MP)
+    cursor.execute('''
+        UPDATE emails 
+        SET sender_name = 'COMPROBANTES DE PAGO ELECTRONICO (UCSM)' 
+        WHERE sender_name = 'CP' OR sender_email LIKE 'cp%' OR subject LIKE '%COMPROBANTE%'
+    ''')
+    cursor.execute('''
+        UPDATE emails 
+        SET sender_name = 'ALDAIR MAURICIO BELISARIO' 
+        WHERE sender_name = 'A' OR sender_email LIKE 'aldair%' OR subject LIKE '%TESIS%'
+    ''')
+    cursor.execute('''
+        UPDATE emails 
+        SET sender_name = 'MESA DE PARTES 02 UCSM' 
+        WHERE sender_name = 'MP' OR sender_name = 'M' OR subject LIKE '%MESA DE PARTES%'
+    ''')
+    cursor.execute('''
+        UPDATE emails 
+        SET sender_name = 'VICERRECTORADO ACADÉMICO UCSM' 
+        WHERE sender_name = 'VA' OR sender_name = 'V' OR subject LIKE '%VICERRECTORADO%'
+    ''')
+
+    # Sembrar datos de memoria REALES de la cuenta de Luis Merma
+    cursor.executemany('''
+        INSERT OR REPLACE INTO memory_contacts (email, name, company, vip, interaction_count, notes, last_interaction)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', [
+        ("aldair.belisario@est.ucsm.edu.pe", "Aldair Mauricio Belisario", "EPIS - UCSM", 1, 8, 
+         "Estudiante tesista de EPIS. Presentó el avance del Plan de Tesis EPIS_Plan de tesis.md. Requiere revisión académica prioritaria.", "2026-08-17 13:56"),
+        ("mesapartes02@ucsm.edu.pe", "Mesa de Partes 02 UCSM", "UCSM Administrativo", 1, 12, 
+         "Canal oficial de solicitudes especiales y trámites académicos de la universidad.", "2026-08-14 14:00"),
+        ("investigacion@ucsm.edu.pe", "Vicerrectorado de Investigación UCSM", "UCSM Investigación", 0, 5, 
+         "Envía convocatorias y fondos concursables de investigación como 'Jóvenes en Agenda'.", "2026-08-14 09:00"),
+        ("vicerrectorado.academico@ucsm.edu.pe", "Vicerrectorado Académico UCSM", "UCSM Académico", 1, 9, 
+         "Remite resoluciones y autos dirigidos a la Dirección de Escuela de Ingeniería de Sistemas (EPIS).", "2026-08-13 16:20")
+    ])
 
     conn.commit()
     conn.close()

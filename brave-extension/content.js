@@ -15,9 +15,23 @@ function autoSyncOutlookEmails() {
     const textContent = row.innerText || "";
     let lines = textContent.split("\n").map(l => l.trim()).filter(l => l.length > 0);
 
-    // Omitir iniciales del avatar (ej. "A", "MP", "VA", "B", "U")
-    while (lines.length > 0 && lines[0].length <= 2 && !lines[0].includes("@")) {
-      lines.shift();
+    // Omitir iniciales del avatar (ej. "CP", "VA", "MP", "A", "AB", "UCSM")
+    while (lines.length > 1) {
+      const candidate = lines[0].trim();
+      const nextLine = lines[1].trim();
+
+      // Si candidate es de 1 a 3 caracteres en MAYÚSCULAS sin espacios ni @ (ej: "CP", "A", "MP")
+      const isAvatarPattern = /^[A-Z0-9]{1,3}$/.test(candidate) && !candidate.includes("@");
+
+      // O si candidate coincide con las iniciales del nombre completo en la siguiente línea
+      const initialsOfNext = nextLine.split(/\s+/).map(w => w[0]).join('').toUpperCase();
+      const isInitialsMatch = candidate.toUpperCase() === initialsOfNext || initialsOfNext.startsWith(candidate.toUpperCase());
+
+      if (isAvatarPattern || (isInitialsMatch && candidate.length <= 4)) {
+        lines.shift(); // Descartar la inicial del avatar
+      } else {
+        break;
+      }
     }
 
     if (lines.length >= 2) {

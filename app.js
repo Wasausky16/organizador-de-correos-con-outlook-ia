@@ -652,6 +652,16 @@ function closeModal(modalId) {
   document.getElementById(modalId).classList.remove("active");
 }
 
+function openDrawer(drawerId) {
+  const drawer = document.getElementById(drawerId);
+  if (drawer) drawer.classList.add("active");
+}
+
+function closeDrawer(drawerId) {
+  const drawer = document.getElementById(drawerId);
+  if (drawer) drawer.classList.remove("active");
+}
+
 function openAddTagModal() {
   document.getElementById("modal-add-tag").classList.add("active");
 }
