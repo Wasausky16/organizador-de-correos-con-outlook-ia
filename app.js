@@ -482,8 +482,11 @@ function confirmSendResponse() {
     const draftBodyText = bodyInput ? bodyInput.value : (activeEmailForDraft.auto_reply_draft || "");
     const cleanRecipientEmail = extractCleanEmailAddress(activeEmailForDraft.sender_email);
 
-    // 1. Construir la URL directa de redacción en Outlook Cloud
-    const composeUrl = `https://outlook.cloud.microsoft/mail/deeplink/compose?to=${encodeURIComponent(cleanRecipientEmail)}&subject=${encodeURIComponent(subjectText)}&body=${encodeURIComponent(draftBodyText)}`;
+    // 1. Construir la URL limpia de redacción en Outlook Cloud (destinatario + asunto)
+    // Nota: Pasar saltos de línea largos en la URL hace que Outlook redirija a la bandeja principal.
+    // Al mantener la URL limpia y copiar el texto al portapapeles, Outlook abre la ventana de redacción directo.
+    const cleanBodyForUrl = draftBodyText.replace(/\n+/g, ' ').substring(0, 150);
+    const composeUrl = `https://outlook.cloud.microsoft/mail/deeplink/compose?to=${encodeURIComponent(cleanRecipientEmail)}&subject=${encodeURIComponent(subjectText)}&body=${encodeURIComponent(cleanBodyForUrl)}`;
 
     // 2. Cerrar el modal en pantalla DE INMEDIATO
     closeModal("modal-draft");
