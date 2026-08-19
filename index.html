@@ -47,6 +47,12 @@
       <button class="tab-btn" onclick="switchTab('tab-inbox')">
         <i class="fa-solid fa-inbox"></i> Bandeja Inteligente (<span id="count-inbox">0</span>)
       </button>
+      <button class="tab-btn" onclick="switchTab('tab-calendar')">
+        <i class="fa-solid fa-calendar-days"></i> Calendario de Vencimientos (<span id="count-deadlines">0</span>)
+      </button>
+      <button class="tab-btn" onclick="switchTab('tab-tags')">
+        <i class="fa-solid fa-tags"></i> Gestor de Etiquetas #Tags
+      </button>
       <button class="tab-btn" onclick="switchTab('tab-memory')">
         <i class="fa-solid fa-brain"></i> Memoria de Contactos
       </button>
@@ -58,96 +64,151 @@
       </button>
     </nav>
 
-    <!-- PESTAÑA 1: RESUMEN DIARIO & TARJETAS METRICAS -->
-    <section id="tab-digest" class="tab-content active">
+    <!-- Layout de Dos Columnas: Contenido Principal + Panel Lateral de Calendario -->
+    <div class="main-workspace-grid">
+      
+      <div class="workspace-content">
+        <!-- PESTAÑA 1: RESUMEN DIARIO & TARJETAS METRICAS -->
+        <section id="tab-digest" class="tab-content active">
 
-      <!-- Tarjetas de Estadísticas Interactivas (Filtros de 1 Clic) -->
-      <div class="stats-grid">
-        <div class="stat-card" onclick="jumpToFilter('HIGH')" style="cursor: pointer;" title="Haz clic para ver correos de ALTA PRIORIDAD">
-          <div class="stat-info">
-            <div class="stat-label">🔴 Alta Prioridad</div>
-            <div class="stat-value" id="stat-high" style="color: var(--priority-high);">0</div>
-          </div>
-          <div class="stat-icon high">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-          </div>
-        </div>
+          <!-- Tarjetas de Estadísticas Interactivas (Filtros de 1 Clic) -->
+          <div class="stats-grid">
+            <div class="stat-card" onclick="jumpToFilter('HIGH')" style="cursor: pointer;" title="Haz clic para ver correos de ALTA PRIORIDAD">
+              <div class="stat-info">
+                <div class="stat-label">🔴 Alta Prioridad</div>
+                <div class="stat-value" id="stat-high" style="color: var(--priority-high);">0</div>
+              </div>
+              <div class="stat-icon high">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+              </div>
+            </div>
 
-        <div class="stat-card" onclick="jumpToFilter('MEDIUM')" style="cursor: pointer;" title="Haz clic para ver correos de PRIORIDAD MEDIA">
-          <div class="stat-info">
-            <div class="stat-label">🟡 Prioridad Media</div>
-            <div class="stat-value" id="stat-med" style="color: var(--priority-medium);">0</div>
-          </div>
-          <div class="stat-icon med">
-            <i class="fa-solid fa-clock"></i>
-          </div>
-        </div>
+            <div class="stat-card" onclick="jumpToFilter('MEDIUM')" style="cursor: pointer;" title="Haz clic para ver correos de PRIORIDAD MEDIA">
+              <div class="stat-info">
+                <div class="stat-label">🟡 Prioridad Media</div>
+                <div class="stat-value" id="stat-med" style="color: var(--priority-medium);">0</div>
+              </div>
+              <div class="stat-icon med">
+                <i class="fa-solid fa-clock"></i>
+              </div>
+            </div>
 
-        <div class="stat-card" onclick="jumpToFilter('LOW')" style="cursor: pointer;" title="Haz clic para ver correos INFORMATIVOS / BAJA">
-          <div class="stat-info">
-            <div class="stat-label">🟢 Baja / Informativos</div>
-            <div class="stat-value" id="stat-low" style="color: var(--priority-low);">0</div>
-          </div>
-          <div class="stat-icon low">
-            <i class="fa-solid fa-circle-check"></i>
-          </div>
-        </div>
+            <div class="stat-card" onclick="jumpToFilter('LOW')" style="cursor: pointer;" title="Haz clic para ver correos INFORMATIVOS / BAJA">
+              <div class="stat-info">
+                <div class="stat-label">🟢 Baja / Informativos</div>
+                <div class="stat-value" id="stat-low" style="color: var(--priority-low);">0</div>
+              </div>
+              <div class="stat-icon low">
+                <i class="fa-solid fa-circle-check"></i>
+              </div>
+            </div>
 
-        <div class="stat-card" onclick="jumpToFilter('ALL')" style="cursor: pointer;" title="Haz clic para ver la BANDEJA COMPLETA">
-          <div class="stat-info">
-            <div class="stat-label">Total Procesados</div>
-            <div class="stat-value" id="stat-total" style="color: var(--primary-cyan);">0</div>
+            <div class="stat-card" onclick="jumpToFilter('ALL')" style="cursor: pointer;" title="Haz clic para ver la BANDEJA COMPLETA">
+              <div class="stat-info">
+                <div class="stat-label">Total Procesados</div>
+                <div class="stat-value" id="stat-total" style="color: var(--primary-cyan);">0</div>
+              </div>
+              <div class="stat-icon total">
+                <i class="fa-solid fa-envelope"></i>
+              </div>
+            </div>
           </div>
-          <div class="stat-icon total">
-            <i class="fa-solid fa-envelope"></i>
+
+          <!-- Resumen Ejecutivo de IA -->
+          <div class="digest-box">
+            <div class="digest-title">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Resumen Ejecutivo Diario (IA Digest)
+            </div>
+            <div class="digest-text" id="digest-summary-text">
+              Cargando análisis inteligente de correos del día...
+            </div>
+            
+            <h4 style="font-family: var(--font-heading); font-size: 0.95rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+              <i class="fa-solid fa-list-check"></i> Acciones Requeridas Hoy:
+            </h4>
+            <div class="action-items-list" id="action-items-container">
+              <!-- Se llena dinámicamente -->
+            </div>
           </div>
-        </div>
+
+          <!-- Vista rápida de correos urgentes -->
+          <h3 style="font-family: var(--font-heading); margin-bottom: 1rem;">
+            <i class="fa-solid fa-fire" style="color: var(--priority-high);"></i> Atenciones Urgentes de Hoy
+          </h3>
+          <div class="email-list" id="urgent-email-list">
+            <!-- Se llena dinámicamente -->
+          </div>
+        </section>
+
+        <!-- PESTAÑA 2: BANDEJA CLASIFICADA -->
+        <section id="tab-inbox" class="tab-content">
+          <div class="inbox-toolbar">
+            <div class="filter-buttons" id="inbox-filter-bar">
+              <button class="filter-btn active" onclick="filterEmails('ALL', this)">Todos</button>
+              <button class="filter-btn" onclick="filterEmails('HIGH', this)">🔴 Alta Prioridad</button>
+              <button class="filter-btn" onclick="filterEmails('MEDIUM', this)">🟡 Media</button>
+              <button class="filter-btn" onclick="filterEmails('LOW', this)">🟢 Baja</button>
+              <button class="filter-btn" onclick="filterEmails('PENDING', this)">⏳ Pendientes</button>
+            </div>
+
+            <input type="text" class="search-input" id="search-inbox" placeholder="🔍 Búsqueda Semántica por tema o intención..." oninput="searchEmails(this.value)">
+          </div>
+
+          <div class="email-list" id="full-email-list">
+            <!-- Lista completa de correos -->
+          </div>
+        </section>
+
+        <!-- PESTAÑA: CALENDARIO DE VENCIMIENTOS -->
+        <section id="tab-calendar" class="tab-content">
+          <div style="margin-bottom: 1.5rem;">
+            <h2 style="font-family: var(--font-heading); margin-bottom: 0.3rem;">📅 Calendario de Vencimientos y Compromisos</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">
+              La IA detecta automáticamente fechas límite en tus correos. Al responder o resolver el correo, la tarea se elimina automáticamente del calendario.
+            </p>
+          </div>
+
+          <div class="email-list" id="full-deadlines-list">
+            <!-- Lista de vencimientos -->
+          </div>
+        </section>
+
+        <!-- PESTAÑA: GESTOR DE ETIQUETAS PERSONALIZADAS -->
+        <section id="tab-tags" class="tab-content">
+          <div class="inbox-toolbar">
+            <div>
+              <h2 style="font-family: var(--font-heading); margin-bottom: 0.3rem;">🏷️ Gestor de Etiquetas Personalizadas (#Tags)</h2>
+              <p style="color: var(--text-muted); font-size: 0.9rem;">
+                Crea tus propias etiquetas con colores para organizar correos sobre Tesis, Trámites, Universidad o temas personales.
+              </p>
+            </div>
+            <button class="btn btn-primary" onclick="openAddTagModal()">
+              <i class="fa-solid fa-plus"></i> Nueva Etiqueta #Tag
+            </button>
+          </div>
+
+          <div class="memory-grid" id="tags-grid-container">
+            <!-- Tarjetas de etiquetas -->
+          </div>
+        </section>
       </div>
 
-      <!-- Resumen Ejecutivo de IA -->
-      <div class="digest-box">
-        <div class="digest-title">
-          <i class="fa-solid fa-wand-magic-sparkles"></i> Resumen Ejecutivo Diario (IA Digest)
-        </div>
-        <div class="digest-text" id="digest-summary-text">
-          Cargando análisis inteligente de correos del día...
+      <!-- Panel Lateral Fijo de Calendario y Fechas Límite (Side Calendar) -->
+      <aside class="sidebar-calendar-panel">
+        <div class="sidebar-header">
+          <h3><i class="fa-solid fa-calendar-check" style="color: var(--primary-cyan);"></i> Próximos Vencimientos</h3>
         </div>
         
-        <h4 style="font-family: var(--font-heading); font-size: 0.95rem; color: var(--text-muted); margin-bottom: 0.75rem;">
-          <i class="fa-solid fa-list-check"></i> Acciones Requeridas Hoy:
-        </h4>
-        <div class="action-items-list" id="action-items-container">
-          <!-- Se llena dinámicamente -->
-        </div>
-      </div>
-
-      <!-- Vista rápida de correos urgentes -->
-      <h3 style="font-family: var(--font-heading); margin-bottom: 1rem;">
-        <i class="fa-solid fa-fire" style="color: var(--priority-high);"></i> Atenciones Urgentes de Hoy
-      </h3>
-      <div class="email-list" id="urgent-email-list">
-        <!-- Se llena dinámicamente -->
-      </div>
-    </section>
-
-    <!-- PESTAÑA 2: BANDEJA CLASIFICADA -->
-    <section id="tab-inbox" class="tab-content">
-      <div class="inbox-toolbar">
-        <div class="filter-buttons">
-          <button class="filter-btn active" onclick="filterEmails('ALL', this)">Todos</button>
-          <button class="filter-btn" onclick="filterEmails('HIGH', this)">🔴 Alta Prioridad</button>
-          <button class="filter-btn" onclick="filterEmails('MEDIUM', this)">🟡 Media</button>
-          <button class="filter-btn" onclick="filterEmails('LOW', this)">🟢 Baja</button>
-          <button class="filter-btn" onclick="filterEmails('PENDING', this)">⏳ Pendientes</button>
+        <div class="mini-calendar-widget" id="mini-calendar-widget">
+          <!-- Calendario visual compacto -->
         </div>
 
-        <input type="text" class="search-input" id="search-inbox" placeholder="🔍 Buscar por asunto o remitente..." oninput="searchEmails(this.value)">
-      </div>
+        <div class="sidebar-deadline-list" id="sidebar-deadline-container">
+          <!-- Lista rápida de vencimientos -->
+        </div>
+      </aside>
 
-      <div class="email-list" id="full-email-list">
-        <!-- Lista completa de correos -->
-      </div>
-    </section>
+    </div>
 
     <!-- PESTAÑA 3: MEMORIA Y CONTACTOS -->
     <section id="tab-memory" class="tab-content">
@@ -375,6 +436,34 @@ copy(Array.from(document.querySelectorAll('[role="option"], [role="listitem"], [
 
       <div style="display: flex; justify-content: flex-end; margin-top: 1.25rem;">
         <button class="btn" onclick="closeModal('modal-brave-sync')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NUEVA ETIQUETA PERSONALIZADA -->
+  <div class="modal-overlay" id="modal-add-tag">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-tag" style="color: var(--primary-cyan);"></i> Crear Nueva Etiqueta Personalizada</h3>
+        <button class="close-modal" onclick="closeModal('modal-add-tag')">&times;</button>
+      </div>
+      <div class="form-group">
+        <label>Nombre de la Etiqueta (ej: #Tesis, #UCSM_Oficial):</label>
+        <input type="text" class="form-control" id="tag-name" placeholder="Ej: #Tesis">
+      </div>
+      <div class="form-group">
+        <label>Color Distintivo:</label>
+        <input type="color" class="form-control" id="tag-color" value="#00e5ff" style="height: 44px; padding: 0.2rem 0.5rem; cursor: pointer;">
+      </div>
+      <div class="form-group">
+        <label>Palabras Clave para Auto-Etiquetado (separadas por coma):</label>
+        <input type="text" class="form-control" id="tag-keywords" placeholder="Ej: tesis, epis, jurado, sustentación">
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button class="btn" onclick="closeModal('modal-add-tag')">Cancelar</button>
+        <button class="btn btn-primary" onclick="submitNewTag()">
+          <i class="fa-solid fa-floppy-disk"></i> Guardar Etiqueta
+        </button>
       </div>
     </div>
   </div>

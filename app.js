@@ -1,6 +1,8 @@
 const API_BASE = "http://localhost:8050/api";
 
 let globalEmails = [];
+let globalTags = [];
+let globalDeadlines = [];
 let activeEmailForDraft = null;
 let currentActiveFilter = "ALL";
 
@@ -9,14 +11,159 @@ document.addEventListener("DOMContentLoaded", () => {
   loadEmails();
   loadMemory();
   loadFaqs();
+  loadDeadlines();
+  loadTags();
 
   // Refrescar el Dashboard en tiempo real cada 15 segundos
   setInterval(() => {
     loadTodaySummary();
     loadEmails();
     loadMemory();
+    loadDeadlines();
   }, 15000);
 });
+
+// Cargar Vencimientos del Calendario
+async function loadDeadlines() {
+  try {
+    const res = await fetch(`${API_BASE}/deadlines`);
+    globalDeadlines = await res.json();
+
+    document.getElementById("count-deadlines").innerText = globalDeadlines.length;
+
+    // Renderizar panel lateral
+    const sideContainer = document.getElementById("sidebar-deadline-container");
+    sideContainer.innerHTML = "";
+
+    if (globalDeadlines.length === 0) {
+      sideContainer.innerHTML = `<div style="font-size: 0.85rem; color: var(--text-dim); padding: 0.5rem 0;">No hay tareas ni vencimientos pendientes.</div>`;
+    } else {
+      globalDeadlines.forEach(item => {
+        const div = document.createElement("div");
+        div.className = `deadline-item ${item.urgency_level}`;
+        const daysLabel = item.urgency_level === 'RED' ? '🔴 Urgente' : (item.urgency_level === 'YELLOW' ? '🟡 Próximo' : '🟢 Tiempo');
+        div.innerHTML = `
+          <div class="deadline-title">${escapeHtml(item.title)}</div>
+          <div class="deadline-date">
+            <span><i class="fa-regular fa-clock"></i> ${item.due_date}</span>
+            <span style="font-weight:700;">${daysLabel}</span>
+          </div>
+        `;
+        sideContainer.appendChild(div);
+      });
+    }
+
+    // Renderizar pestaña completa de calendario
+    const fullContainer = document.getElementById("full-deadlines-list");
+    if (fullContainer) {
+      fullContainer.innerHTML = "";
+      if (globalDeadlines.length === 0) {
+        fullContainer.innerHTML = `<div style="text-align: center; color: var(--text-dim); padding: 3rem;">¡Excelente! No hay fechas límite ni tareas pendientes.</div>`;
+      } else {
+        globalDeadlines.forEach(item => {
+          const card = document.createElement("div");
+          card.className = "email-card";
+          card.innerHTML = `
+            <div>
+              <span class="priority-badge ${item.urgency_level === 'RED' ? 'HIGH' : 'MEDIUM'}">${item.urgency_level === 'RED' ? '🔴 VENCE PRONTO' : '🟡 PROGRAMADO'}</span>
+            </div>
+            <div class="email-content">
+              <div class="email-subject"><i class="fa-solid fa-calendar-check" style="color: var(--primary-cyan);"></i> ${escapeHtml(item.title)}</div>
+              <div class="email-body">Fecha límite de atención: <strong>${item.due_date}</strong></div>
+              <div class="email-footer-tags">
+                <span class="tag action"><i class="fa-solid fa-bell"></i> Evento activo en Calendario</span>
+              </div>
+            </div>
+            <div class="email-actions">
+              <button class="btn btn-primary" onclick="openDraftModal('${item.email_id}')">
+                <i class="fa-solid fa-check"></i> Atender y Resolver
+              </button>
+            </div>
+          `;
+          fullContainer.appendChild(card);
+        });
+      }
+    }
+  } catch (err) {
+    console.error("Error al cargar vencimientos del calendario:", err);
+  }
+}
+
+// Cargar Etiquetas Personalizadas (#Tags)
+async function loadTags() {
+  try {
+    const res = await fetch(`${API_BASE}/tags`);
+    globalTags = await res.json();
+
+    const container = document.getElementById("tags-grid-container");
+    const filterBar = document.getElementById("inbox-filter-bar");
+    container.innerHTML = "";
+
+    globalTags.forEach(tag => {
+      const card = document.createElement("div");
+      card.className = "memory-card";
+      card.innerHTML = `
+        <div class="memory-header">
+          <span class="contact-name" style="color: ${tag.color}; font-size: 1.2rem;">${escapeHtml(tag.name)}</span>
+        </div>
+        <div class="memory-notes">
+          <strong>Palabras Clave de Auto-Etiquetado:</strong><br>
+          ${escapeHtml(tag.keywords)}
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  } catch (err) {
+    console.error("Error al cargar etiquetas:", err);
+  }
+}
+
+// Generar Tarjetas de Correo con Badges de Adjuntos e Iconos
+function createEmailCard(email) {
+  const card = document.createElement("div");
+  card.className = "email-card";
+
+  const priorityLabel = email.priority === "HIGH" ? "ALTA" : (email.priority === "MEDIUM" ? "MEDIA" : "BAJA");
+  
+  // Detectar si el texto menciona archivos adjuntos (.md, .pdf, .docx)
+  let attachmentBadgesHTML = "";
+  if (email.body.includes(".pdf") || email.subject.includes(".pdf")) {
+    attachmentBadgesHTML += `<span class="attachment-badge pdf"><i class="fa-solid fa-file-pdf"></i> Documento PDF</span> `;
+  }
+  if (email.body.includes(".md") || email.subject.includes(".md")) {
+    attachmentBadgesHTML += `<span class="attachment-badge md"><i class="fa-solid fa-file-code"></i> Plan de Tesis (.md)</span> `;
+  }
+
+  card.innerHTML = `
+    <div>
+      <span class="priority-badge ${email.priority}">🔴 ${priorityLabel}</span>
+    </div>
+    <div class="email-content">
+      <div class="sender-info">
+        <span class="sender-name">${escapeHtml(email.sender_name)}</span>
+        <span class="sender-email">&lt;${escapeHtml(email.sender_email)}&gt;</span>
+      </div>
+      <div class="email-subject">${escapeHtml(email.subject)}</div>
+      <div class="email-body">${escapeHtml(email.body)}</div>
+      <div class="email-footer-tags">
+        <span class="tag" style="background: rgba(0, 229, 255, 0.15); color: var(--primary-cyan); font-weight:700;">${email.category}</span>
+        ${attachmentBadgesHTML}
+        <span class="tag action"><i class="fa-solid fa-lightbulb"></i> ${escapeHtml(email.action_item)}</span>
+      </div>
+    </div>
+    <div class="email-actions">
+      <span class="time-stamp">${email.timestamp}</span>
+      ${email.status === 'RESPONDED' ? 
+        `<span class="tag" style="color: var(--priority-low);"><i class="fa-solid fa-check-double"></i> Respondido / Resuelto</span>` :
+        `<button class="btn btn-primary" onclick="openDraftModal('${email.id}')">
+          <i class="fa-solid fa-pen-to-square"></i> Ver Borrador
+        </button>`
+      }
+    </div>
+  `;
+
+  return card;
+}
 
 // Navegación por pestañas
 function switchTab(tabId) {
@@ -473,6 +620,35 @@ async function pasteAndSyncFromClipboard() {
 
 function closeModal(modalId) {
   document.getElementById(modalId).classList.remove("active");
+}
+
+function openAddTagModal() {
+  document.getElementById("modal-add-tag").classList.add("active");
+}
+
+async function submitNewTag() {
+  const name = document.getElementById("tag-name").value.trim();
+  const color = document.getElementById("tag-color").value.trim();
+  const keywords = document.getElementById("tag-keywords").value.trim();
+
+  if (!name) {
+    alert("Por favor ingresa un nombre para la etiqueta (ej: #Tesis).");
+    return;
+  }
+
+  try {
+    await fetch(`${API_BASE}/tags/add`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, color, keywords })
+    });
+
+    closeModal("modal-add-tag");
+    loadTags();
+    alert(`¡Etiqueta ${name} creada exitosamente! Culaquier usuario puede personalizar etiquetas.`);
+  } catch (err) {
+    console.error("Error al guardar etiqueta:", err);
+  }
 }
 
 function escapeHtml(text) {

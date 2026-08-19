@@ -214,42 +214,77 @@ def init_db():
              "Hola {nombre},\n\nHemos recibido tus datos de pago. Nuestro equipo de finanzas validará el comprobante en un lapso máximo de 2 horas hábiles y te notificaremos.\n\nGracias por tu preferencia!")
         ])
 
-    # Sembrar Correos REALES de Luis Merma (UCSM) si no existen
+    # Tabla de Etiquetas Personalizadas (#Tags)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS tags (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE,
+            color TEXT,
+            keywords TEXT
+        )
+    ''')
+
+    # Tabla de Calendario de Vencimientos y Fechas Límite
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS deadlines (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email_id TEXT,
+            title TEXT,
+            due_date TEXT,
+            urgency_level TEXT, -- RED, YELLOW, GREEN
+            status TEXT DEFAULT 'PENDING' -- PENDING, RESOLVED
+        )
+    ''')
+
+    # Sembrar Etiquetas iniciales personalizables
+    cursor.execute('SELECT COUNT(*) FROM tags')
+    if cursor.fetchone()[0] == 0:
+        cursor.executemany('''
+            INSERT INTO tags (name, color, keywords) VALUES (?, ?, ?)
+        ''', [
+            ("#Tesis", "#a855f7", "tesis, plan de tesis, epis, jurado, borrador"),
+            ("#UCSM_Oficial", "#00e5ff", "ucsm, vicerrectorado, convocatoria, universidad"),
+            ("#Tramites", "#ffa502", "mesa de partes, mpv, solicitud, auto, resolucion"),
+            ("#Finanzas", "#2ed573", "pago, factura, comprobante, costo, tarifa"),
+            ("#BolsaDeTrabajo", "#ec4899", "empleo, vacante, analista, alumni")
+        ])
+
+    # Sembrar Correos REALES de Luis Merma (UCSM) con Adjuntos y Tags
     cursor.execute('SELECT COUNT(*) FROM emails')
     if cursor.fetchone()[0] == 0:
         real_emails = [
             ("real-ucsm-01", "ALDAIR MAURICIO BELISARIO", "aldair.belisario@est.ucsm.edu.pe", 
              "PLAN DE TESIS", 
              "Estimado Luis, adjunto el avance del documento del Plan de Tesis (EPIS_Plan de tesis.md) para revisión y comentarios académicos.",
-             "2026-08-17 13:56", "HIGH", "VIP", "PENDING", 
-             "🔴 ACCIÓN REQUERIDA: Revisar el Plan de Tesis (EPIS_Plan de tesis.md) de Aldair Belisario.", "URGENT", 
+             "2026-08-17 13:56", "HIGH", "#Tesis", "PENDING", 
+             "🔴 ACCIÓN REQUERIDA: Revisar el Plan de Tesis (EPIS_Plan de tesis.md) de Aldair Belisario antes del 20/08.", "URGENT", 
              "Hola Aldair,\n\nHemos recibido el avance del Plan de Tesis. Lo estaré revisando a la brevedad y te enviaré mis comentarios.\n\nSaludos cordiales,\nLuis Merma"),
 
             ("real-ucsm-02", "MESA DE PARTES 02 UCSM", "mesapartes02@ucsm.edu.pe", 
              "AVISO: MPV MESA DE PARTES VIRTUAL - SOLICITUDES ESPECIALES", 
-             "UNIVERSIDAD CATÓLICA DE SANTA MARÍA - MESA DE PARTES VIRTUAL. Notificación sobre el estado de solicitudes especiales del semestre.",
-             "2026-08-14 14:00", "HIGH", "FINANZAS", "PENDING", 
-             "🔴 ACCIÓN REQUERIDA: Dar seguimiento al trámite registrado en Mesa de Partes Virtual UCSM.", "URGENT", 
+             "UNIVERSIDAD CATÓLICA DE SANTA MARÍA - MESA DE PARTES VIRTUAL. Notificación sobre la Solicitud Especial N° 4092 asignada. Vencimiento de respuesta: 19/08/2026.",
+             "2026-08-14 14:00", "HIGH", "#Tramites", "PENDING", 
+             "🔴 ACCIÓN REQUERIDA: Dar seguimiento al trámite en Mesa de Partes Virtual UCSM antes del 19/08.", "URGENT", 
              "Estimados Mesa de Partes UCSM,\n\nConfirmamos la recepción del aviso sobre la solicitud especial. Quedamos a la espera de la resolución.\n\nAtentamente,\nLuis Merma"),
 
             ("real-ucsm-03", "Universidad Católica de Santa María", "investigacion@ucsm.edu.pe", 
              "Convocatoria del Concurso de Investigación 'Jóvenes en Agenda' edición 2026", 
-             "Estimados estudiantes, la presente es para poner de su conocimiento las bases del Concurso de Investigación Jóvenes en Agenda 2026. Adjunto P018039 1.pdf.",
-             "2026-08-14 09:00", "MEDIUM", "GENERAL", "PENDING", 
-             "Revisar bases del concurso de investigación 'Jóvenes en Agenda 2026' (PDF adjunto).", "POSITIVE", 
+             "Estimados estudiantes, la presente es para poner de su conocimiento las bases del Concurso de Investigación Jóvenes en Agenda 2026. Adjunto documento P018039 1.pdf. Fecha límite postulación: 25/08/2026.",
+             "2026-08-14 09:00", "MEDIUM", "#UCSM_Oficial", "PENDING", 
+             "Revisar bases del concurso 'Jóvenes en Agenda 2026' (P018039 1.pdf). Vence 25/08.", "POSITIVE", 
              "Estimados Vicerrectorado de Investigación UCSM,\n\nMuchas gracias por la información sobre la convocatoria 2026. Revisaremos las bases adjuntas.\n\nSaludos cordiales,\nLuis Merma"),
 
             ("real-ucsm-04", "VICERRECTORADO ACADÉMICO UCSM", "vicerrectorado.academico@ucsm.edu.pe", 
              "AVISO: MPV MESA DE PARTES VIRTUAL - SOLICITUDES ESPECIALES", 
              "Señor Doctor GUILLERMO CALDERON RUIZ Director de la Escuela Profesional de Ingeniería de Sistemas. Notificación de Auto N°0183 y Resolución P016664.pdf.",
-             "2026-08-13 16:20", "MEDIUM", "VIP", "PENDING", 
+             "2026-08-13 16:20", "MEDIUM", "#UCSM_Oficial", "PENDING", 
              "Revisar resolución del Vicerrectorado Académico emitida a la Dirección de EPIS.", "NEUTRAL", 
              "Estimados del Vicerrectorado Académico,\n\nConfirmamos recepción del Auto N°0183 y la resolución correspondiente.\n\nSaludos,\nLuis Merma"),
 
             ("real-ucsm-05", "Bolsa de Trabajo UCSM", "bempleo@ucsm.edu.pe", 
              "Bolsa de Trabajo UCSM: ANALISTA DE EXCELENCIA OPERACIONAL", 
              "Dirección de Empleabilidad y Alumni UCSM. Oportunidad laboral disponible: ANALISTA DE EXCELENCIA OPERACIONAL para alumnos de últimos ciclos y egresados.",
-             "2026-08-13 11:10", "LOW", "GENERAL", "RESPONDED", 
+             "2026-08-13 11:10", "LOW", "#BolsaDeTrabajo", "RESPONDED", 
              "Informativo: Convocatoria de Empleo Analista de Excelencia Operacional UCSM.", "NEUTRAL", ""),
 
             ("real-ucsm-06", "El equipo de Miro", "your@product.miro.com", 
@@ -263,6 +298,16 @@ def init_db():
             INSERT INTO emails (id, sender_name, sender_email, subject, body, timestamp, priority, category, status, action_item, sentiment, auto_reply_draft)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', real_emails)
+
+        # Sembrar Vencimientos del Calendario
+        cursor.executemany('''
+            INSERT INTO deadlines (email_id, title, due_date, urgency_level, status) VALUES (?, ?, ?, ?, ?)
+        ''', [
+            ("real-ucsm-01", "Revisión Plan de Tesis EPIS (Aldair Belisario)", "2026-08-20", "RED", "PENDING"),
+            ("real-ucsm-02", "Trámite Solicitud Especial MPV Mesa de Partes", "2026-08-19", "RED", "PENDING"),
+            ("real-ucsm-03", "Cierre Postulación Concurso 'Jóvenes en Agenda'", "2026-08-25", "YELLOW", "PENDING"),
+            ("real-ucsm-04", "Revisión Auto N°0183 Vicerrectorado EPIS", "2026-08-22", "YELLOW", "PENDING")
+        ])
 
         # Sembrar datos de memoria REALES de la cuenta de Luis Merma
         cursor.executemany('''
@@ -351,9 +396,9 @@ class AssistantHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
-        path = parsed.path
+        path = parsed.path.rstrip('/')
 
-        if path == "/api/emails":
+        if path.startswith("/api/emails"):
             conn = sqlite3.connect(DB_FILE)
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
@@ -367,7 +412,7 @@ class AssistantHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps(emails).encode('utf-8'))
             return
 
-        elif path == "/api/summary/today":
+        elif path.startswith("/api/summary"):
             today_str = datetime.date.today().isoformat()
             conn = sqlite3.connect(DB_FILE)
             conn.row_factory = sqlite3.Row
@@ -409,7 +454,7 @@ class AssistantHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps(response_data).encode('utf-8'))
             return
 
-        elif path == "/api/memory":
+        elif path.startswith("/api/memory"):
             conn = sqlite3.connect(DB_FILE)
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
@@ -423,20 +468,32 @@ class AssistantHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps(memory).encode('utf-8'))
             return
 
-        elif path == "/api/config/imap":
-            config = load_imap_config()
-            # Ocultar contraseña por seguridad en GET
-            safe_config = {
-                "enabled": config.get("enabled", False),
-                "server": config.get("server", "outlook.office365.com"),
-                "port": config.get("port", 993),
-                "email": config.get("email", "luis.merma@est.ucsm.edu.pe"),
-                "has_password": bool(config.get("password"))
-            }
+        elif path.startswith("/api/tags"):
+            conn = sqlite3.connect(DB_FILE)
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM tags ORDER BY id ASC")
+            tags = [dict(row) for row in cursor.fetchall()]
+            conn.close()
+
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
-            self.wfile.write(json.dumps(safe_config).encode('utf-8'))
+            self.wfile.write(json.dumps(tags).encode('utf-8'))
+            return
+
+        elif path.startswith("/api/deadlines"):
+            conn = sqlite3.connect(DB_FILE)
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM deadlines WHERE status = 'PENDING' ORDER BY due_date ASC")
+            deadlines = [dict(row) for row in cursor.fetchall()]
+            conn.close()
+
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(deadlines).encode('utf-8'))
             return
 
         elif path == "/api/faqs":
@@ -625,20 +682,45 @@ class AssistantHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         elif path == "/api/emails/status":
-            # Actualizar estado de correo (RESPONDED, ARCHIVED)
+            # Actualizar estado de correo (RESPONDED, ARCHIVED) y limpiar del calendario de vencimientos
             email_id = payload.get("id")
             new_status = payload.get("status", "RESPONDED")
 
             conn = sqlite3.connect(DB_FILE)
             cursor = conn.cursor()
             cursor.execute("UPDATE emails SET status = ? WHERE id = ?", (new_status, email_id))
+            
+            if new_status == "RESPONDED":
+                # Auto-limpieza de la tarea del calendario al ser respondido o resuelto
+                cursor.execute("UPDATE deadlines SET status = 'RESOLVED' WHERE email_id = ?", (email_id,))
+
             conn.commit()
             conn.close()
 
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
-            self.wfile.write(json.dumps({"status": "updated"}).encode('utf-8'))
+            self.wfile.write(json.dumps({"status": "updated", "deadline_resolved": True}).encode('utf-8'))
+            return
+
+        elif path == "/api/tags/add":
+            name = payload.get("name", "").strip()
+            color = payload.get("color", "#00e5ff").strip()
+            keywords = payload.get("keywords", "").strip()
+
+            if not name.startswith("#"):
+                name = "#" + name
+
+            conn = sqlite3.connect(DB_FILE)
+            cursor = conn.cursor()
+            cursor.execute("INSERT OR REPLACE INTO tags (name, color, keywords) VALUES (?, ?, ?)", (name, color, keywords))
+            conn.commit()
+            conn.close()
+
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "created"}).encode('utf-8'))
             return
 
         elif path == "/api/config/imap":

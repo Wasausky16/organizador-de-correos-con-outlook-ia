@@ -675,9 +675,89 @@ textarea.form-control {
   resize: vertical;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .app-header { padding: 1rem; }
-  .email-card { grid-template-columns: 1fr; }
-  .email-actions { align-items: flex-start; }
+/* Grid Principal con Panel Lateral de Calendario */
+.main-workspace-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.sidebar-calendar-panel {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  position: sticky;
+  top: 90px;
+}
+
+.sidebar-header h3 {
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sidebar-deadline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.deadline-item {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-glass);
+  border-left: 3px solid var(--primary-cyan);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  font-size: 0.85rem;
+  transition: var(--transition);
+}
+
+.deadline-item:hover {
+  border-color: var(--border-highlight);
+  transform: translateX(2px);
+}
+
+.deadline-item.RED { border-left-color: var(--priority-high); }
+.deadline-item.YELLOW { border-left-color: var(--priority-medium); }
+.deadline-item.GREEN { border-left-color: var(--priority-low); }
+
+.deadline-title {
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 0.25rem;
+}
+
+.deadline-date {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Badges de Archivos Adjuntos */
+.attachment-badge {
+  background: rgba(0, 229, 255, 0.1);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  color: var(--primary-cyan);
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 500;
+}
+
+.attachment-badge.pdf { background: rgba(255, 71, 87, 0.15); color: #ff4757; border-color: rgba(255, 71, 87, 0.3); }
+.attachment-badge.md { background: rgba(168, 85, 247, 0.15); color: #a855f7; border-color: rgba(168, 85, 247, 0.3); }
+
+@media (max-width: 1024px) {
+  .main-workspace-grid { grid-template-columns: 1fr; }
+  .sidebar-calendar-panel { position: static; }
 }
