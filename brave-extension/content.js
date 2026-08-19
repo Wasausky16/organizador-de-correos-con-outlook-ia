@@ -56,7 +56,9 @@ function autoSyncOutlookEmails() {
       }
 
       if (!senderEmail) {
-        const cleanNameParts = senderName.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().split(/\s+/);
+        // Normalizar acentos y tildes (ej: "Católica" -> "catolica", no "catlica")
+        const normalizedName = senderName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const cleanNameParts = normalizedName.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().split(/\s+/);
         const emailUser = cleanNameParts.length >= 2 ? `${cleanNameParts[0]}.${cleanNameParts[1]}` : cleanNameParts[0];
         senderEmail = `${emailUser}@ucsm.edu.pe`;
       }

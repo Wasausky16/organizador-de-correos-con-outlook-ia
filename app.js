@@ -463,41 +463,35 @@ async function confirmSendResponse() {
   const draftBodyText = document.getElementById("draft-body").value;
   const cleanRecipientEmail = extractCleanEmailAddress(activeEmailForDraft.sender_email);
 
+  // 1. Notificar al backend local en segundo plano sin bloquear
+  fetch(`${API_BASE}/emails/status`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id: activeEmailForDraft.id, status: "RESPONDED" })
+  }).catch(err => console.log("Status update:", err));
+
+  // 2. Intentar copiar al portapapeles
   try {
-    // 1. Actualizar estado local a RESPONDED
-    await fetch(`${API_BASE}/emails/status`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: activeEmailForDraft.id, status: "RESPONDED" })
-    });
+    await navigator.clipboard.writeText(draftBodyText);
+  } catch (e) {}
 
-    // 2. Copiar el texto de la respuesta al portapapeles
-    try {
-      await navigator.clipboard.writeText(draftBodyText);
-    } catch (e) {
-      console.log("No se pudo copiar al portapapeles automáticamente.");
-    }
+  // 3. Constuir la URL directa de redacción en Outlook Cloud
+  const composeUrl = `https://outlook.cloud.microsoft/mail/deeplink/compose?to=${encodeURIComponent(cleanRecipientEmail)}&subject=${encodeURIComponent(subjectText)}&body=${encodeURIComponent(draftBodyText)}`;
+  
+  closeModal("modal-draft");
 
-    // 3. Abrir la ventana de envío oficial en tu Outlook Cloud con la dirección de correo limpia (sin prefijos)
-    const composeUrl = `https://outlook.cloud.microsoft/mail/deeplink/compose?to=${encodeURIComponent(cleanRecipientEmail)}&subject=${encodeURIComponent(subjectText)}&body=${encodeURIComponent(draftBodyText)}`;
-    const mailtoFallback = `mailto:${encodeURIComponent(cleanRecipientEmail)}?subject=${encodeURIComponent(subjectText)}&body=${encodeURIComponent(draftBodyText)}`;
+  // 4. Abrir la pestaña oficial de envío
+  const targetWindow = window.open(composeUrl, "_blank");
+  if (!targetWindow || targetWindow.closed || typeof targetWindow.closed == 'undefined') {
+    // Si el navegador bloqueó la ventana emergente, redirigir directamente
+    window.location.href = composeUrl;
+  }
 
-    // Abrir pestaña en tu Outlook oficial
-    const newWin = window.open(composeUrl, "_blank");
-    if (!newWin || newWin.closed || typeof newWin.closed == 'undefined') {
-      window.location.href = mailtoFallback;
-    }
-
-    closeModal("modal-draft");
+  setTimeout(() => {
     loadTodaySummary();
     loadEmails();
-    loadMemory();
-
-    alert(`¡Borrador Aprobado!\n\nSe ha abierto la ventana de redacción en tu Outlook Cloud (${cleanRecipientEmail}) con el mensaje prellenado.`);
-  } catch (err) {
-    console.error("Error al procesar envío:", err);
-    alert("Ocurrió un detalle al procesar la respuesta.");
-  }
+    loadDeadlines();
+  }, 600);
 }
 
 // Modal Simular Correo Entrante
