@@ -253,11 +253,11 @@ def init_db():
     cursor.execute('SELECT COUNT(*) FROM emails')
     if cursor.fetchone()[0] == 0:
         real_emails = [
-            ("real-ucsm-01", "ALDAIR MAURICIO BELISARIO", "aldair.belisario@est.ucsm.edu.pe", 
+            ("real-ucsm-01", "ALDAIR MAURICIO BELISARIO FERNANDEZ", "aldair.belisario@est.ucsm.edu.pe", 
              "PLAN DE TESIS", 
              "Estimado Luis, adjunto el avance del documento del Plan de Tesis (EPIS_Plan de tesis.md) para revisión y comentarios académicos.",
              "2026-08-17 13:56", "HIGH", "#Tesis", "PENDING", 
-             "🔴 ACCIÓN REQUERIDA: Revisar el Plan de Tesis (EPIS_Plan de tesis.md) de Aldair Belisario antes del 20/08.", "URGENT", 
+             "🔴 ACCIÓN REQUERIDA: Revisar el Plan de Tesis (EPIS_Plan de tesis.md) de Aldair Belisario Fernandez antes del 20/08.", "URGENT", 
              "Hola Aldair,\n\nHemos recibido el avance del Plan de Tesis. Lo estaré revisando a la brevedad y te enviaré mis comentarios.\n\nSaludos cordiales,\nLuis Merma"),
 
             ("real-ucsm-02", "MESA DE PARTES 02 UCSM", "mesapartes02@ucsm.edu.pe", 
@@ -864,6 +864,25 @@ class AssistantHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
             self.wfile.write(json.dumps({"status": "created"}).encode('utf-8'))
+            return
+
+        elif path == "/api/cache/purge":
+            # Purga total de caché y reinicio limpio de base de datos
+            conn = sqlite3.connect(DB_FILE)
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM emails")
+            cursor.execute("DELETE FROM deadlines")
+            cursor.execute("DELETE FROM memory_contacts")
+            conn.commit()
+            conn.close()
+
+            # Volver a sembrar datos limpios e integrales
+            init_db()
+
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "purged", "message": "Caché borrada exitosamente"}).encode('utf-8'))
             return
 
         elif path == "/api/import":

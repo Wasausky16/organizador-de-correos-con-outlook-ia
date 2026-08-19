@@ -656,6 +656,20 @@ function closeDrawer(drawerId) {
   if (drawer) drawer.classList.remove("active");
 }
 
+async function purgeCache() {
+  if (!confirm("¿Estás seguro de que deseas borrar la caché y reiniciar la memoria local desde cero?")) return;
+  try {
+    const res = await fetch(`${API_BASE}/cache/purge`, { method: "POST" });
+    const data = await res.json();
+    alert("✅ " + (data.message || "Caché de base de datos borrada con éxito."));
+    closeDrawer("drawer-options");
+    refreshAllData();
+  } catch (err) {
+    console.error("Error al borrar caché:", err);
+    alert("Ocurrió un error al intentar borrar la caché.");
+  }
+}
+
 function openAddTagModal() {
   document.getElementById("modal-add-tag").classList.add("active");
 }
