@@ -253,7 +253,7 @@ def init_db():
     cursor.execute('SELECT COUNT(*) FROM emails')
     if cursor.fetchone()[0] == 0:
         real_emails = [
-            ("real-ucsm-01", "ALDAIR MAURICIO BELISARIO FERNANDEZ", "aldair.belisario@est.ucsm.edu.pe", 
+            ("real-ucsm-01", "ALDAIR MAURICIO BELISARIO FERNANDEZ", "aldair.mauricio.belisario.fernandez@est.ucsm.edu.pe", 
              "PLAN DE TESIS", 
              "Estimado Luis, adjunto el avance del documento del Plan de Tesis (EPIS_Plan de tesis.md) para revisión y comentarios académicos.",
              "2026-08-17 13:56", "HIGH", "#Tesis", "PENDING", 

@@ -56,11 +56,11 @@ function autoSyncOutlookEmails() {
       }
 
       if (!senderEmail) {
-        // Normalizar acentos y tildes (ej: "Católica" -> "catolica", no "catlica")
+        // Unir TODOS los nombres y apellidos sin cortar ni omitir ninguna palabra
         const normalizedName = senderName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        const cleanNameParts = normalizedName.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().split(/\s+/);
-        const emailUser = cleanNameParts.length >= 2 ? `${cleanNameParts[0]}.${cleanNameParts[1]}` : cleanNameParts[0];
-        senderEmail = `${emailUser}@ucsm.edu.pe`;
+        const cleanNameParts = normalizedName.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().split(/\s+/).filter(p => p.length > 0);
+        const emailUser = cleanNameParts.join('.');
+        senderEmail = `${emailUser}@est.ucsm.edu.pe`;
       }
 
       const bodyPreview = lines.slice(bodyStartIdx, bodyStartIdx + 4).join(" ") || "Detalle del correo recibido.";
