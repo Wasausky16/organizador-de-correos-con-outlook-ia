@@ -6,6 +6,14 @@ let globalDeadlines = [];
 let activeEmailForDraft = null;
 let currentActiveFilter = "ALL";
 
+// Utility: Extraer dirección de correo limpia (únicamente usuario@dominio.com)
+function extractCleanEmailAddress(rawSender) {
+  if (!rawSender) return "";
+  const match = String(rawSender).match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+  if (match) return match[0];
+  return String(rawSender).trim();
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   loadTodaySummary();
   loadEmails();
