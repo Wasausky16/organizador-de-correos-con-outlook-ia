@@ -362,10 +362,16 @@ def init_db():
         SET action_item = '🟡 Revisar Auto N°0183 y Resolución del Vicerrectorado Académico'
         WHERE subject LIKE '%VICERRECTORADO%' OR body LIKE '%VICERRECTORADO%'
     ''')
+    # Reescritura ejecutiva humana para los borradores de auto-respuesta
     cursor.execute('''
         UPDATE emails 
-        SET action_item = '🟢 Verificar comprobante de pago electrónico (UCSM)'
-        WHERE subject LIKE '%COMPROBANTE%' OR body LIKE '%COMPROBANTE%'
+        SET auto_reply_draft = 'Hola Aldair,\n\nHemos recibido el avance del Plan de Tesis EPIS. Lo estaré revisando a la brevedad y te enviaré mis comentarios.\n\nSaludos cordiales,\nLuis Merma'
+        WHERE sender_email LIKE '%aldair%' OR subject LIKE '%TESIS%'
+    ''')
+    cursor.execute('''
+        UPDATE emails 
+        SET auto_reply_draft = 'Estimados (Bolsa de Trabajo UCSM),\n\nMuchas gracias por la información sobre la oportunidad laboral. Estaremos difundiendo la convocatoria entre los alumnos y egresados de EPIS.\n\nSaludos cordiales,\nLuis Merma'
+        WHERE sender_email LIKE '%bempleo%' OR subject LIKE '%Bolsa de Trabajo%'
     ''')
 
     # Sembrar datos de memoria REALES de la cuenta de Luis Merma
@@ -431,11 +437,28 @@ def classify_email(subject, body, sender_email):
     return priority, category, action_item, sentiment
 
 # Generador de borradores FAQ
-def match_faq_draft(subject, body, sender_name="Remitente"):
-    # Limpiar iniciales de avatar aisladas (ej. "A", "MP", "VA")
-    clean_name = sender_name.split("(")[0].strip() if sender_name else "Estimado/a"
-    if len(clean_name) <= 2:
-        clean_name = "Estimado/a"
+def clean_human_greeting_name(sender_name, sender_email):
+    if not sender_name or len(sender_name.strip()) <= 2:
+        if "bempleo" in sender_email or "bolsa" in sender_email:
+            return "Estimados (Bolsa de Trabajo UCSM)"
+        elif "mesapartes" in sender_email:
+            return "Estimados (Mesa de Partes UCSM)"
+        elif "investigacion" in sender_email or "vicerrectorado" in sender_email:
+            return "Estimados (Vicerrectorado UCSM)"
+        return "Estimado/a"
+
+    clean = sender_name.split("(")[0].strip()
+    if len(clean) <= 2:
+        return "Estimado/a"
+        
+    parts = clean.split()
+    if len(parts) >= 2 and not any(org in clean.upper() for org in ["UCSM", "MESA", "BOLSA", "VICERRECTORADO", "COMPROBANTES"]):
+        return parts[0].capitalize()
+        
+    return clean
+
+def match_faq_draft(subject, body, sender_name="Remitente", sender_email=""):
+    clean_name = clean_human_greeting_name(sender_name, sender_email)
 
     conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row

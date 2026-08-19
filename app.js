@@ -459,9 +459,9 @@ function openDraftModal(emailId) {
 async function confirmSendResponse() {
   if (!activeEmailForDraft) return;
 
-  const recipientEmail = activeEmailForDraft.sender_email;
   const subjectText = document.getElementById("draft-subject").value || `Re: ${activeEmailForDraft.subject}`;
   const draftBodyText = document.getElementById("draft-body").value;
+  const cleanRecipientEmail = extractCleanEmailAddress(activeEmailForDraft.sender_email);
 
   try {
     // 1. Actualizar estado local a RESPONDED
@@ -478,9 +478,9 @@ async function confirmSendResponse() {
       console.log("No se pudo copiar al portapapeles automáticamente.");
     }
 
-    // 3. Abrir la ventana de envío oficial en tu Outlook Cloud o mailto oficial
-    const composeUrl = `https://outlook.cloud.microsoft/mail/deeplink/compose?to=${encodeURIComponent(recipientEmail)}&subject=${encodeURIComponent(subjectText)}&body=${encodeURIComponent(draftBodyText)}`;
-    const mailtoFallback = `mailto:${encodeURIComponent(recipientEmail)}?subject=${encodeURIComponent(subjectText)}&body=${encodeURIComponent(draftBodyText)}`;
+    // 3. Abrir la ventana de envío oficial en tu Outlook Cloud con la dirección de correo limpia (sin prefijos)
+    const composeUrl = `https://outlook.cloud.microsoft/mail/deeplink/compose?to=${encodeURIComponent(cleanRecipientEmail)}&subject=${encodeURIComponent(subjectText)}&body=${encodeURIComponent(draftBodyText)}`;
+    const mailtoFallback = `mailto:${encodeURIComponent(cleanRecipientEmail)}?subject=${encodeURIComponent(subjectText)}&body=${encodeURIComponent(draftBodyText)}`;
 
     // Abrir pestaña en tu Outlook oficial
     const newWin = window.open(composeUrl, "_blank");
@@ -493,7 +493,7 @@ async function confirmSendResponse() {
     loadEmails();
     loadMemory();
 
-    alert(`¡Borrador Aprobado!\n\nSe ha abierto la ventana de redacción en tu Outlook Cloud (${recipientEmail}) con el mensaje prellenado.\n\nTambién se copió la respuesta al portapapeles.`);
+    alert(`¡Borrador Aprobado!\n\nSe ha abierto la ventana de redacción en tu Outlook Cloud (${cleanRecipientEmail}) con el mensaje prellenado.`);
   } catch (err) {
     console.error("Error al procesar envío:", err);
     alert("Ocurrió un detalle al procesar la respuesta.");
