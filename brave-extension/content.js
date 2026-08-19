@@ -11,7 +11,7 @@ function autoSyncOutlookEmails() {
   cutoffDate.setDate(cutoffDate.getDate() - 60);
 
   emailRows.forEach((row, index) => {
-    if (index > 25) return; // Limitar a los 25 más recientes de la bandeja
+    if (index > 150) return; // Escanear hasta 150 correos visibles conforme se desplaza en Outlook
     const textContent = row.innerText || "";
     const lines = textContent.split("\n").map(l => l.trim()).filter(l => l.length > 0);
 

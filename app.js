@@ -41,9 +41,15 @@ async function loadDeadlines() {
       globalDeadlines.forEach(item => {
         const div = document.createElement("div");
         div.className = `deadline-item ${item.urgency_level}`;
+        div.style.cursor = "pointer";
+        div.title = "Haz clic para ver y responder este correo de inmediato";
+        div.onclick = () => {
+          openDraftModal(item.email_id);
+        };
+
         const daysLabel = item.urgency_level === 'RED' ? '🔴 Urgente' : (item.urgency_level === 'YELLOW' ? '🟡 Próximo' : '🟢 Tiempo');
         div.innerHTML = `
-          <div class="deadline-title">${escapeHtml(item.title)}</div>
+          <div class="deadline-title"><i class="fa-solid fa-envelope" style="color: var(--primary-cyan); margin-right: 4px;"></i> ${escapeHtml(item.title)}</div>
           <div class="deadline-date">
             <span><i class="fa-regular fa-clock"></i> ${item.due_date}</span>
             <span style="font-weight:700;">${daysLabel}</span>

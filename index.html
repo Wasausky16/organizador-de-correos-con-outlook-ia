@@ -9,29 +9,27 @@
 </head>
 <body>
 
-  <!-- Header principal -->
+  <!-- Encabezado Principal Limpio y Ejecutivo -->
   <header class="app-header">
-    <div class="brand-container">
-      <div class="brand-icon">
+    <div class="logo-area">
+      <div class="logo-icon">
         <i class="fa-solid fa-robot"></i>
       </div>
-      <div class="brand-text">
-        <h1>Asistente Outlook IA <span>v1.0 Local</span></h1>
+      <div class="logo-text">
+        <h1>Asistente Outlook IA</h1>
+        <span class="badge-version">v1.0 Local</span>
       </div>
+      <span class="sync-status active" style="margin-left: 1rem;">
+        <i class="fa-solid fa-circle" style="color: #2ed573; font-size: 0.65rem;"></i> Auto-Sync Activo
+      </span>
     </div>
 
-    <div class="header-actions">
-      <span class="tag" style="background: rgba(46, 213, 115, 0.15); color: var(--priority-low); border-color: rgba(46, 213, 115, 0.3); font-weight: 600;">
-        <i class="fa-solid fa-bolt"></i> Auto-Sync Activo (20s)
-      </span>
-      <button class="btn" id="btn-sync-today" onclick="loadTodaySummary()">
-        <i class="fa-solid fa-rotate"></i> Actualizar Día
+    <div class="sync-actions">
+      <button class="btn btn-secondary" onclick="loadTodaySummary(); loadEmails();" title="Recargar bandeja y métricas">
+        <i class="fa-solid fa-rotate"></i> Actualizar
       </button>
-      <button class="btn btn-primary" onclick="openBraveSyncGuide()">
-        <i class="fa-solid fa-sync"></i> Conectar Outlook Real
-      </button>
-      <button class="btn" onclick="exportBackup()">
-        <i class="fa-solid fa-database"></i> Exportar Memoria
+      <button class="btn btn-primary" onclick="openModal('modal-brave')" title="Conexión Outlook y Respaldo de Base de Datos">
+        <i class="fa-solid fa-gear"></i> Opciones & Conexión
       </button>
     </div>
   </header>
