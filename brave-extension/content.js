@@ -12,44 +12,56 @@ function autoSyncOutlookEmails() {
 
   emailRows.forEach((row, index) => {
     if (index > 150) return; // Escanear hasta 150 correos visibles conforme se desplaza en Outlook
+    const ariaLabel = row.getAttribute("aria-label") || "";
     const textContent = row.innerText || "";
+    
+    // 1. Extraer Email Explícito en el texto o aria-label
+    const emailMatch = (ariaLabel + " " + textContent).match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+    let senderEmail = emailMatch ? emailMatch[0] : "";
+
     let lines = textContent.split("\n").map(l => l.trim()).filter(l => l.length > 0);
 
-    // Omitir iniciales del avatar (ej. "CP", "VA", "MP", "A", "AB", "UCSM")
+    // 2. Descartar iniciales del avatar (ej: "B", "A", "CP", "MP") o correos duplicados en primera línea
     while (lines.length > 1) {
-      const candidate = lines[0].trim();
-      const nextLine = lines[1].trim();
+      const candidate = lines[0];
 
-      // Si candidate es de 1 a 3 caracteres en MAYÚSCULAS sin espacios ni @ (ej: "CP", "A", "MP")
+      // Si candidate es de 1 a 3 caracteres en MAYÚSCULAS sin @ (ej: "B", "A", "CP")
       const isAvatarPattern = /^[A-Z0-9]{1,3}$/.test(candidate) && !candidate.includes("@");
+      const isDuplicateEmail = candidate.toLowerCase() === senderEmail.toLowerCase();
 
-      // O si candidate coincide con las iniciales del nombre completo en la siguiente línea
-      const initialsOfNext = nextLine.split(/\s+/).map(w => w[0]).join('').toUpperCase();
-      const isInitialsMatch = candidate.toUpperCase() === initialsOfNext || initialsOfNext.startsWith(candidate.toUpperCase());
-
-      if (isAvatarPattern || (isInitialsMatch && candidate.length <= 4)) {
-        lines.shift(); // Descartar la inicial del avatar
+      if (isAvatarPattern || isDuplicateEmail) {
+        lines.shift(); // Descartar línea de avatar o email suelto
       } else {
         break;
       }
     }
 
     if (lines.length >= 2) {
-      const senderName = lines[0] || "Remitente Outlook";
-      const subject = lines[1] || "Sin asunto";
-      const bodyPreview = lines.slice(2, 6).join(" ") || "Detalle del correo recibido.";
+      let senderName = lines[0] || "Remitente Outlook";
+      let subject = lines[1] || "Sin asunto";
+      let bodyStartIdx = 2;
 
-      // Buscar correo electrónico explícito en la fila del DOM
-      const emailMatch = textContent.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-      let senderEmail = emailMatch ? emailMatch[0] : "";
+      // Si senderName sigue siendo corto (<= 2 caracteres), avanzar al siguiente
+      if (senderName.length <= 2 && lines.length > 1) {
+        senderName = lines[1];
+        subject = lines[2] || "Sin asunto";
+        bodyStartIdx = 3;
+      }
+
+      // Si el asunto capturado contiene un email (ej: "bempleo@ucsm.edu.pe"), moverlo a senderEmail y corregir asunto
+      if (subject.includes("@")) {
+        if (!senderEmail) senderEmail = subject;
+        subject = lines[bodyStartIdx] || "Notificación de Correo";
+        bodyStartIdx++;
+      }
 
       if (!senderEmail) {
-        // Generar un correo consistente y válido a partir del nombre completo
         const cleanNameParts = senderName.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().split(/\s+/);
         const emailUser = cleanNameParts.length >= 2 ? `${cleanNameParts[0]}.${cleanNameParts[1]}` : cleanNameParts[0];
         senderEmail = `${emailUser}@ucsm.edu.pe`;
       }
 
+      const bodyPreview = lines.slice(bodyStartIdx, bodyStartIdx + 4).join(" ") || "Detalle del correo recibido.";
       const dateText = lines.find(l => l.match(/(\d{1,2}:\d{2})|(Ayer)|(Lun|Mar|Mié|Jue|Vie|Sáb|Dom)|(\d{1,2}\/\d{1,2}\/\d{2,4})/i)) || new Date().toLocaleDateString();
 
       emails.push({

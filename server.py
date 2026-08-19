@@ -327,8 +327,13 @@ def init_db():
     ''')
     cursor.execute('''
         UPDATE emails 
-        SET sender_name = 'VICERRECTORADO ACADÉMICO UCSM' 
-        WHERE sender_name = 'VA' OR sender_name = 'V' OR subject LIKE '%VICERRECTORADO%'
+        SET sender_name = 'Bolsa de Trabajo UCSM', sender_email = 'bempleo@ucsm.edu.pe' 
+        WHERE sender_name = 'B' OR sender_email LIKE '%b@%' OR sender_email LIKE '%bempleo%' OR subject LIKE '%bempleo%' OR subject LIKE '%Bolsa de Trabajo%'
+    ''')
+    cursor.execute('''
+        UPDATE emails 
+        SET subject = 'Bolsa de Trabajo UCSM: Oportunidades Laborales' 
+        WHERE subject LIKE '%bempleo@%' OR subject LIKE 'b@%'
     ''')
 
     # Sembrar datos de memoria REALES de la cuenta de Luis Merma
