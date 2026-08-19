@@ -13,17 +13,34 @@ function autoSyncOutlookEmails() {
   emailRows.forEach((row, index) => {
     if (index > 150) return; // Escanear hasta 150 correos visibles conforme se desplaza en Outlook
     const textContent = row.innerText || "";
-    const lines = textContent.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+    let lines = textContent.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+
+    // Omitir iniciales del avatar (ej. "A", "MP", "VA", "B", "U")
+    while (lines.length > 0 && lines[0].length <= 2 && !lines[0].includes("@")) {
+      lines.shift();
+    }
 
     if (lines.length >= 2) {
-      const sender = lines[0] || "Remitente Outlook";
+      const senderName = lines[0] || "Remitente Outlook";
       const subject = lines[1] || "Sin asunto";
-      const bodyPreview = lines.slice(2, 5).join(" ") || "Detalle del correo recibido.";
+      const bodyPreview = lines.slice(2, 6).join(" ") || "Detalle del correo recibido.";
+
+      // Buscar correo electrónico explícito en la fila del DOM
+      const emailMatch = textContent.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+      let senderEmail = emailMatch ? emailMatch[0] : "";
+
+      if (!senderEmail) {
+        // Generar un correo consistente y válido a partir del nombre completo
+        const cleanNameParts = senderName.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().split(/\s+/);
+        const emailUser = cleanNameParts.length >= 2 ? `${cleanNameParts[0]}.${cleanNameParts[1]}` : cleanNameParts[0];
+        senderEmail = `${emailUser}@ucsm.edu.pe`;
+      }
+
       const dateText = lines.find(l => l.match(/(\d{1,2}:\d{2})|(Ayer)|(Lun|Mar|Mié|Jue|Vie|Sáb|Dom)|(\d{1,2}\/\d{1,2}\/\d{2,4})/i)) || new Date().toLocaleDateString();
 
       emails.push({
-        sender_name: sender,
-        sender_email: sender.includes("@") ? sender : `${sender.toLowerCase().replace(/[^a-z0-9]/g, '')}@ucsm.edu.pe`,
+        sender_name: senderName,
+        sender_email: senderEmail,
         subject: subject,
         body: bodyPreview,
         timestamp: dateText

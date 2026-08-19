@@ -356,31 +356,32 @@ def classify_email(subject, body, sender_email):
 
     # Acción sugerida
     action_item = f"Revisar y gestionar correo de {sender_email}"
-    if priority == "HIGH":
-        action_item = f"🔴 ACCIÓN REQUERIDA: Atender solicitud urgente de {sender_email}"
-    elif category == "FAQ":
-        action_item = f"Enviar borrador de respuesta FAQ a {sender_email}"
-    elif category == "FINANZAS":
-        action_item = f"Verificar comprobante / emitir factura para {sender_email}"
+    action_item = f"Verificar comprobante / emitir factura para {sender_email}"
 
     return priority, category, action_item, sentiment
 
 # Generador de borradores FAQ
-def match_faq_draft(subject, body, sender_name):
-    text = (subject + " " + body).lower()
+def match_faq_draft(subject, body, sender_name="Remitente"):
+    # Limpiar iniciales de avatar aisladas (ej. "A", "MP", "VA")
+    clean_name = sender_name.split("(")[0].strip() if sender_name else "Estimado/a"
+    if len(clean_name) <= 2:
+        clean_name = "Estimado/a"
+
     conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
-    cursor.execute("SELECT keywords, auto_response_template FROM faqs WHERE is_active = 1")
-    faqs = cursor.fetchall()
+    cursor.execute("SELECT * FROM faqs WHERE is_active = 1")
+    faqs = [dict(row) for row in cursor.fetchall()]
     conn.close()
 
-    for keywords, template in faqs:
-        kw_list = [k.strip().lower() for k in keywords.split(",")]
-        if any(kw in text for kw in kw_list):
-            clean_name = sender_name.split("(")[0].strip() if sender_name else "Estimado/a"
+    text_to_search = f"{subject} {body}".lower()
+    
+    for faq in faqs:
+        keywords = [k.strip().lower() for k in faq['keywords'].split(",") if k.strip()]
+        if any(k in text_to_search for k in keywords):
+            template = faq['auto_response_template']
             return template.replace("{nombre}", clean_name)
     
-    clean_name = sender_name.split("(")[0].strip() if sender_name else "Estimado/a"
     return f"Hola {clean_name},\n\nHemos recibido tu mensaje respecto a '{subject}'. Nuestro equipo está procesando tu solicitud y te responderemos a la brevedad.\n\nSaludos cordiales!"
 
 class AssistantHandler(http.server.SimpleHTTPRequestHandler):
