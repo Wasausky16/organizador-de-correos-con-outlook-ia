@@ -23,6 +23,30 @@ document.addEventListener("DOMContentLoaded", () => {
   }, 15000);
 });
 
+// Refrescar todos los módulos con animación visual
+async function refreshAllData(btn) {
+  if (btn) btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Actualizando...`;
+  try {
+    await Promise.all([
+      loadTodaySummary(),
+      loadEmails(),
+      loadDeadlines(),
+      loadTags(),
+      loadMemory()
+    ]);
+  } catch (e) {
+    console.error("Error al refrescar:", e);
+  }
+  if (btn) {
+    setTimeout(() => {
+      btn.innerHTML = `<i class="fa-solid fa-check" style="color: #2ed573;"></i> ¡Actualizado!`;
+      setTimeout(() => {
+        btn.innerHTML = `<i class="fa-solid fa-rotate"></i> Actualizar`;
+      }, 1200);
+    }, 200);
+  }
+}
+
 // Cargar Vencimientos del Calendario
 async function loadDeadlines() {
   try {

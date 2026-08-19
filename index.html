@@ -25,10 +25,10 @@
     </div>
 
     <div class="sync-actions">
-      <button class="btn btn-secondary" onclick="loadTodaySummary(); loadEmails();" title="Recargar bandeja y métricas">
+      <button class="btn btn-secondary" onclick="refreshAllData(this)" title="Recargar toda la bandeja, métricas y calendario">
         <i class="fa-solid fa-rotate"></i> Actualizar
       </button>
-      <button class="btn btn-primary" onclick="openModal('modal-brave')" title="Conexión Outlook y Respaldo de Base de Datos">
+      <button class="btn btn-primary" onclick="switchTab('tab-config')" title="Conexión Outlook, Extensión Brave y Respaldo de Datos">
         <i class="fa-solid fa-gear"></i> Opciones & Conexión
       </button>
     </div>
