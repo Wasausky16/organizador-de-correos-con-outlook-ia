@@ -453,42 +453,61 @@ function openDraftModal(emailId) {
   document.getElementById("draft-subject").value = `Re: ${email.subject}`;
   document.getElementById("draft-body").value = email.auto_reply_draft || `Hola ${email.sender_name},\n\nHemos recibido tu mensaje y lo estamos atendiendo.`;
 
-  document.getElementById("modal-draft").classList.add("active");
+  const modal = document.getElementById("modal-draft");
+  if (modal) {
+    modal.style.display = "flex";
+    modal.classList.add("active");
+  }
 }
 
 function confirmSendResponse() {
-  if (!activeEmailForDraft) return;
+  try {
+    if (!activeEmailForDraft) {
+      closeModal("modal-draft");
+      return;
+    }
 
-  const subjectText = document.getElementById("draft-subject").value || `Re: ${activeEmailForDraft.subject}`;
-  const draftBodyText = document.getElementById("draft-body").value;
-  const cleanRecipientEmail = extractCleanEmailAddress(activeEmailForDraft.sender_email);
+    const subjectInput = document.getElementById("draft-subject");
+    const bodyInput = document.getElementById("draft-body");
 
-  // 1. Construir la URL directa de redacción en Outlook Cloud
-  const composeUrl = `https://outlook.cloud.microsoft/mail/deeplink/compose?to=${encodeURIComponent(cleanRecipientEmail)}&subject=${encodeURIComponent(subjectText)}&body=${encodeURIComponent(draftBodyText)}`;
-  
-  // 2. Abrir la ventana inmediatamente (SÍNCRONO en el evento click del usuario)
-  const targetWindow = window.open(composeUrl, "_blank");
-  if (!targetWindow || targetWindow.closed || typeof targetWindow.closed == 'undefined') {
-    // Si el navegador tuviera activo un bloqueo estricto, redirigir
-    window.location.href = composeUrl;
+    const subjectText = subjectInput ? subjectInput.value : `Re: ${activeEmailForDraft.subject}`;
+    const draftBodyText = bodyInput ? bodyInput.value : (activeEmailForDraft.auto_reply_draft || "");
+    const cleanRecipientEmail = extractCleanEmailAddress(activeEmailForDraft.sender_email);
+
+    // 1. Construir la URL directa de redacción en Outlook Cloud
+    const composeUrl = `https://outlook.cloud.microsoft/mail/deeplink/compose?to=${encodeURIComponent(cleanRecipientEmail)}&subject=${encodeURIComponent(subjectText)}&body=${encodeURIComponent(draftBodyText)}`;
+
+    // 2. Cerrar el modal en pantalla DE INMEDIATO
+    closeModal("modal-draft");
+
+    // 3. Notificar al backend local en segundo plano
+    fetch(`${API_BASE}/emails/status`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: activeEmailForDraft.id, status: "RESPONDED" })
+    }).catch(err => console.error("Status update error:", err));
+
+    // 4. Copiar texto al portapapeles en segundo plano
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(draftBodyText).catch(e => console.log("Clipboard copy:", e));
+    }
+
+    // 5. Abrir la pestaña oficial de envío en Outlook Cloud
+    const targetWin = window.open(composeUrl, "_blank", "noopener");
+    if (!targetWin) {
+      window.open(composeUrl, "_self");
+    }
+
+    // 6. Recargar las métricas de la bandeja local
+    setTimeout(() => {
+      loadTodaySummary();
+      loadEmails();
+      loadDeadlines();
+    }, 400);
+  } catch (err) {
+    console.error("Error en confirmSendResponse:", err);
+    closeModal("modal-draft");
   }
-
-  // 3. Tareas secundarias asíncronas (copiar texto al portapapeles y notificar al backend)
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(draftBodyText).catch(e => console.log("Clipboard:", e));
-  }
-
-  fetch(`${API_BASE}/emails/status`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id: activeEmailForDraft.id, status: "RESPONDED" })
-  }).then(() => {
-    loadTodaySummary();
-    loadEmails();
-    loadDeadlines();
-  }).catch(err => console.log("Status update:", err));
-
-  closeModal("modal-draft");
 }
 
 // Modal Simular Correo Entrante
@@ -640,7 +659,11 @@ async function pasteAndSyncFromClipboard() {
 }
 
 function closeModal(modalId) {
-  document.getElementById(modalId).classList.remove("active");
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.classList.remove("active");
+    modal.style.display = "none";
+  }
 }
 
 function openDrawer(drawerId) {
