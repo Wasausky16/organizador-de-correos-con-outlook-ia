@@ -456,42 +456,39 @@ function openDraftModal(emailId) {
   document.getElementById("modal-draft").classList.add("active");
 }
 
-async function confirmSendResponse() {
+function confirmSendResponse() {
   if (!activeEmailForDraft) return;
 
   const subjectText = document.getElementById("draft-subject").value || `Re: ${activeEmailForDraft.subject}`;
   const draftBodyText = document.getElementById("draft-body").value;
   const cleanRecipientEmail = extractCleanEmailAddress(activeEmailForDraft.sender_email);
 
-  // 1. Notificar al backend local en segundo plano sin bloquear
+  // 1. Construir la URL directa de redacción en Outlook Cloud
+  const composeUrl = `https://outlook.cloud.microsoft/mail/deeplink/compose?to=${encodeURIComponent(cleanRecipientEmail)}&subject=${encodeURIComponent(subjectText)}&body=${encodeURIComponent(draftBodyText)}`;
+  
+  // 2. Abrir la ventana inmediatamente (SÍNCRONO en el evento click del usuario)
+  const targetWindow = window.open(composeUrl, "_blank");
+  if (!targetWindow || targetWindow.closed || typeof targetWindow.closed == 'undefined') {
+    // Si el navegador tuviera activo un bloqueo estricto, redirigir
+    window.location.href = composeUrl;
+  }
+
+  // 3. Tareas secundarias asíncronas (copiar texto al portapapeles y notificar al backend)
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(draftBodyText).catch(e => console.log("Clipboard:", e));
+  }
+
   fetch(`${API_BASE}/emails/status`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ id: activeEmailForDraft.id, status: "RESPONDED" })
-  }).catch(err => console.log("Status update:", err));
-
-  // 2. Intentar copiar al portapapeles
-  try {
-    await navigator.clipboard.writeText(draftBodyText);
-  } catch (e) {}
-
-  // 3. Constuir la URL directa de redacción en Outlook Cloud
-  const composeUrl = `https://outlook.cloud.microsoft/mail/deeplink/compose?to=${encodeURIComponent(cleanRecipientEmail)}&subject=${encodeURIComponent(subjectText)}&body=${encodeURIComponent(draftBodyText)}`;
-  
-  closeModal("modal-draft");
-
-  // 4. Abrir la pestaña oficial de envío
-  const targetWindow = window.open(composeUrl, "_blank");
-  if (!targetWindow || targetWindow.closed || typeof targetWindow.closed == 'undefined') {
-    // Si el navegador bloqueó la ventana emergente, redirigir directamente
-    window.location.href = composeUrl;
-  }
-
-  setTimeout(() => {
+  }).then(() => {
     loadTodaySummary();
     loadEmails();
     loadDeadlines();
-  }, 600);
+  }).catch(err => console.log("Status update:", err));
+
+  closeModal("modal-draft");
 }
 
 // Modal Simular Correo Entrante
